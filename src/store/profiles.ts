@@ -1,0 +1,66 @@
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { RootState } from ".";
+
+export interface ProfileInfo {
+  game: string;
+  name: string;
+  icon: string;
+}
+
+interface GamesState {
+  active: number;
+  profiles: ProfileInfo[];
+}
+
+const initialState: GamesState = {
+  active: 0,
+  profiles: [],
+};
+
+const findProfIdx = (state: GamesState, name: string) => {
+  const prev = state.active;
+  const idx = state.profiles.findIndex((v) => v.name === name);
+  if (idx !== -1) return idx;
+  return Math.min(state.profiles.length - 1, Math.max(0, prev));
+};
+
+const profsSlice = createSlice({
+  name: "profiles",
+  initialState,
+  reducers: {
+    setActive: (state, action: PayloadAction<string>) => {
+      state.active = findProfIdx(state, action.payload);
+    },
+    updateProfiles: (
+      state,
+      action: PayloadAction<
+        { game: string; profiles: ProfileInfo[]; selected: string }
+      >,
+    ) => {
+      const profs = [];
+      for (const p of state.profiles) {
+        if (p.game === action.payload.game) continue;
+        profs.push(p);
+      }
+      profs.push(...action.payload.profiles);
+      console.log(profs);
+      state.profiles = profs;
+      state.active = findProfIdx(state, action.payload.selected);
+    },
+  },
+});
+
+export const { setActive, updateProfiles } = profsSlice.actions;
+
+export const selectProfiles = ({ profiles }: RootState) => profiles.profiles;
+
+export const selectGameProfiles = createSelector(
+  [selectProfiles, (_state: RootState, game: string) => game],
+  (profs, game) => profs.filter((v) => v.game === game),
+);
+export const selectActiveProfileIdx = ({ profiles }: RootState) =>
+  profiles.active;
+export const selectActiveProfile = ({ profiles }: RootState) =>
+  profiles.profiles[profiles.active];
+
+export default profsSlice.reducer;
