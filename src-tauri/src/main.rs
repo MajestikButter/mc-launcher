@@ -15,7 +15,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             ipc::select_profile,
             ipc::request_games_update,
-            ipc::request_profiles_update
+            ipc::request_profiles_update,
+            ipc::play_game,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -5,15 +5,24 @@ import { GameList } from "./components/GameList";
 import { PageArea } from "./components/PageArea";
 import { GameName } from "./components/GameName";
 import { ProfileDropdown } from "./components/ProfileDropdown";
+import { PlayButton } from "./components/PlayButton";
+import { GameBackground } from "./components/GameBackground";
+import { LeftPanel } from "./components/LeftPanel";
+import { SettingsButton } from "./components/SettingsButton";
 
 function App() {
   return (
     <StyledDiv>
       <StyledContentDiv>
-        <GameList />
+        <LeftPanel>
+          <GameList />
+          <SettingsButton />
+        </LeftPanel>
         <PageArea>
           <GameName />
+          <GameBackground />
           <ProfileDropdown />
+          <PlayButton />
         </PageArea>
       </StyledContentDiv>
       <Footer>Created by MajestikButter</Footer>

@@ -43,7 +43,6 @@ const profsSlice = createSlice({
         profs.push(p);
       }
       profs.push(...action.payload.profiles);
-      console.log(profs);
       state.profiles = profs;
       state.active = findProfIdx(state, action.payload.selected);
     },

@@ -4,6 +4,15 @@ import preact from "@preact/preset-vite";
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   plugins: [preact()],
+  optimizeDeps: {
+    esbuildOptions: {
+      target: "esnext",
+    },
+  },
+
+  build: {
+    target: "esnext",
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

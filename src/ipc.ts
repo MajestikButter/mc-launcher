@@ -2,16 +2,13 @@ import { invoke } from "@tauri-apps/api";
 import { GameInfo } from "./store/games";
 import { ProfileInfo } from "./store/profiles";
 
-interface BasicRouter {
-  [k: string]: {
-    params: any;
-    return: any;
-  };
-}
-
-interface InvokeRouter extends BasicRouter {
+interface InvokeRouter {
   select_profile: {
     params: { game: string; profile: string };
+    return: void;
+  };
+  play_game: {
+    params: { game: string };
     return: void;
   };
   request_games_update: {

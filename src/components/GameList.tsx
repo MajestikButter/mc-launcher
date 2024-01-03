@@ -17,18 +17,8 @@ export function GameList() {
 }
 
 const Div = styled.div`
-  height: 100%;
-  width: 22vw;
-  padding-left: 9px;
-  padding-right: 9px;
-  padding-top: 7px;
-
-  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.2);
-  color: #0f0f0f;
-  background-color: #ffffff;
-
-  @media (prefers-color-scheme: dark) {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
+  flex-grow: 1;
+  width: 100%;
+  padding-right: 10px;
+  overflow-y: auto;
 `;

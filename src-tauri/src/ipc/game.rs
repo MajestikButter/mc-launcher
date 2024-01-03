@@ -1,5 +1,5 @@
 use crate::{
-    model::{self, GameObject, GamesRecord},
+    model::{self, GamesRecord, create_symlink},
     Error,
 };
 
@@ -31,6 +31,28 @@ pub struct GameProfilesInfo {
 pub struct LimitedGameInfo {
     name: String,
     icon: String,
+    background: String,
+}
+
+#[command]
+pub fn play_game(game: String) -> IpcResponse<()> {
+    let file = read_file();
+    let obj = file.get(&game);
+
+    let res = match obj {
+        None => Err(Error::GameDoesNotExist(format!(
+            "no game named '{game}' exists"
+        ))),
+        Some(obj) => {
+            let prof = obj.profiles.get(&obj.selectedProfile).unwrap();
+            let from = &obj.destination;
+            let to = &prof.path;
+            let sec_id = &obj.securityID;
+            create_symlink(from, to, sec_id);
+            Ok(())
+        }
+    };
+    IpcResponse::from(res)
 }
 
 #[command]
@@ -92,6 +114,7 @@ pub fn request_games_update(app_handle: tauri::AppHandle) -> IpcResponse<Vec<Lim
         vec.push(LimitedGameInfo {
             name: name,
             icon: obj.iconPath,
+            background: obj.backgroundPath,
         })
     }
     let _ = app_handle.emit_all("mc-launcher://update-games", &vec);

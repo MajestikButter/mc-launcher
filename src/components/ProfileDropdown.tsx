@@ -5,6 +5,7 @@ import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { useAppSelector } from "../hooks";
 import { selectActiveProfile } from "../store/profiles";
 import { ProfileList } from "./ProfileList";
+import { Icon } from "./Icon";
 
 export function ProfileDropdown() {
   const [open, setOpen] = useState(false);
@@ -13,7 +14,7 @@ export function ProfileDropdown() {
   return (
     <Button onClick={() => setOpen(!open)}>
       <ProfileDiv>
-        {active?.icon && <Icon src={active?.icon} />}
+        {active?.icon && <DropIcon src={active?.icon} />}
         <Title>{active?.name ?? "Unknown"}</Title>
       </ProfileDiv>
       <FontAwesomeIcon icon={open ? faChevronDown : faChevronUp}></FontAwesomeIcon>
@@ -24,12 +25,11 @@ export function ProfileDropdown() {
 
 const Title = styled.text`
   flex-grow: 1;
-  font-size: 1.5vw;
   font-weight: bold;
   margin: auto;
 `;
 
-const Icon = styled.img`
+const DropIcon = styled(Icon)`
   height: 100%;
 `;
 
@@ -45,8 +45,10 @@ const Button = styled.button`
   display: flex;
   position: absolute;
   padding: 0;
-  height: 6vw;
+  aspect-ratio: 3.5;
   width: 20vw;
+  min-width: 40mm;
+  max-width: 90mm;
   bottom: 20px;
   left: 10px;
 `;

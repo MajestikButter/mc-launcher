@@ -45,7 +45,7 @@ const Title = styled.text`
   display: inline;
   height: 20%;
   flex-grow: 1;
-  font-size: 2vw;
+  font-size: 7mm;
   font-weight: bold;
   text-overflow: ellipsis;
   overflow: hidden;

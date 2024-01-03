@@ -10,11 +10,13 @@ const StyledDiv = styled.div`
   width: 100%;
   text-align: left;
 
+  z-index: 10;
+
   color: #0f0f0f;
   background-color: #cccccc;
 
   @media (prefers-color-scheme: dark) {
     color: #ffffff;
-    background-color: #0f0f0fe0;
+    background-color: #141414;
   }
 `;

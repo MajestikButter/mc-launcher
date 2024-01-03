@@ -24,6 +24,8 @@ impl ProfileObject {
 #[derive(Serialize, Deserialize)]
 pub struct GameObject {
     #[serde(default)]
+    pub backgroundPath: String,
+    #[serde(default)]
     pub iconPath: String,
     pub profiles: BTreeMap<String, ProfileObject>,
     pub launchScript: String,
@@ -35,6 +37,7 @@ pub struct GameObject {
 impl GameObject {
     fn preview_default() -> Self {
         Self {
+            backgroundPath: String::from("./preview.png"),
             iconPath: String::from("./preview.png"),
             selectedProfile: String::from("Default"),
             profiles: BTreeMap::from([(String::from("Default"), ProfileObject::default())]),
@@ -45,6 +48,7 @@ impl GameObject {
     }
     fn default() -> Self {
         Self {
+            backgroundPath: String::from("./release.png"),
             iconPath: String::from("./release.png"),
             selectedProfile: String::from("Default"),
             profiles: BTreeMap::from([(String::from("Default"), ProfileObject::default())]),

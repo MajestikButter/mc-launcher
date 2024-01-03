@@ -4,6 +4,7 @@ import type { RootState } from ".";
 export interface GameInfo {
   name: string;
   icon: string;
+  background: string;
 }
 
 interface GamesState {
