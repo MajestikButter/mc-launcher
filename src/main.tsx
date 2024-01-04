@@ -1,7 +1,17 @@
-import { render } from "preact";
-import App from "./App";
 import "./styles.css";
+import { render } from "preact";
 import { Provider } from "react-redux";
+
+import { Window } from "./components/Window";
+import { LeftPanel } from "./components/LeftPanel";
+import { GameList } from "./components/GameList";
+import { SettingsButton } from "./components/SettingsButton";
+import { PageArea } from "./components/PageArea";
+import { GameName } from "./components/GameName";
+import { GameBackground } from "./components/GameBackground";
+import { ProfileDropdown } from "./components/ProfileDropdown";
+import { PlayButton } from "./components/PlayButton";
+
 import store from "./store";
 import "./event";
 import { ipcInvoke } from "./ipc";
@@ -17,7 +27,18 @@ if (game) {
 
 render(
   <Provider store={store}>
-    <App />
+    <Window>
+      <LeftPanel>
+        <GameList />
+        <SettingsButton />
+      </LeftPanel>
+      <PageArea>
+        <GameName />
+        <GameBackground />
+        <ProfileDropdown />
+        <PlayButton />
+      </PageArea>
+    </Window>
   </Provider>,
   document.getElementById("root")!
 );

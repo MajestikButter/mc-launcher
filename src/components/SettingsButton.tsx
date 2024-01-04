@@ -1,7 +1,20 @@
+import { useState } from "preact/hooks";
 import styled from "styled-components";
+import { EditDialog } from "./EditDialog";
 
 export function SettingsButton() {
-  return <Button onClick={() => {}}>Settings</Button>;
+  const [edit, setEdit] = useState(false);
+
+  return (
+    <Button onClick={() => setEdit(true)}>
+      Settings
+      {edit && (
+        <EditDialog>
+          <button onClick={() => setEdit(false)}>Close Dialog</button>
+        </EditDialog>
+      )}
+    </Button>
+  );
 }
 
 const Button = styled.button`

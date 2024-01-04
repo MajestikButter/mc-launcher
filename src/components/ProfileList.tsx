@@ -1,20 +1,53 @@
-import { useAppSelector } from "../hooks";
-import { selectActiveGame } from "../store/games";
 import styled from "styled-components";
-import { ProfileElement } from "./ProfileElement";
+import { useAppDispatch, useAppSelector } from "../hooks";
+import { setActive } from "../store/profiles";
+import { selectActiveGame } from "../store/games";
+import { ipcInvoke } from "../ipc";
 import { selectActiveProfileIdx, selectGameProfiles } from "../store/profiles";
+import { ProfileElement } from "./ProfileElement";
+import { useState } from "preact/hooks";
+import { EditDialog } from "./EditDialog";
 
-export function ProfileList() {
+interface ProfileListProperties {
+  onClick: () => void;
+}
+
+export function ProfileList(props: ProfileListProperties) {
+  const { onClick } = props;
+
   const activeGame = useAppSelector(selectActiveGame);
   const profiles = useAppSelector((state) => selectGameProfiles(state, activeGame?.name));
   const active = useAppSelector(selectActiveProfileIdx);
 
+  const [edit, setEdit] = useState(false);
+  const dispatch = useAppDispatch();
+
   return (
     <WrapperDiv>
       <Div>
-        {profiles.map((game, i) => (
-          <ProfileElement name={game.name} icon={game.icon} active={active == i} />
+        {profiles.map((prof, i) => (
+          <ProfileElement
+            name={prof.name}
+            icon={prof.icon}
+            active={active == i}
+            onClick={() => {
+              const game = activeGame?.name;
+              if (!game) return;
+              dispatch(setActive(game));
+              ipcInvoke("select_profile", { game, profile: prof.name });
+              onClick();
+            }}
+            onEdit={() => {
+              onClick();
+              setEdit(true);
+            }}
+          />
         ))}
+        {edit && (
+          <EditDialog>
+            <button onClick={() => setEdit(false)}>Close Dialog</button>
+          </EditDialog>
+        )}
       </Div>
     </WrapperDiv>
   );

@@ -1,27 +1,25 @@
 import styled from "styled-components";
-import { ipcInvoke } from "../ipc";
-import { useAppDispatch } from "../hooks";
-import { setActive } from "../store/games";
 import { Icon } from "./Icon";
+import { EditButton } from "./EditButton";
 
 interface GameElementProperties {
   icon?: string;
   name: string;
   active: boolean;
+  onClick: () => void;
+  onEdit: () => void;
 }
 export function GameElement(props: GameElementProperties) {
-  const { icon, active, name } = props;
-  const dispatch = useAppDispatch();
+  const { icon, active, name, onClick, onEdit } = props;
+
   return (
     <Button
       $active={active}
-      onClick={() => {
-        dispatch(setActive(name));
-        ipcInvoke("request_profiles_update", { name });
-      }}
+      onClick={onClick}
     >
       <GameIcon src={icon} />
       <Title>{name}</Title>
+      <EditButton onClick={onEdit} />
     </Button>
   );
 }

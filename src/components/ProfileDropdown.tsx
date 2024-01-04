@@ -18,7 +18,7 @@ export function ProfileDropdown() {
         <Title>{active?.name ?? "Unknown"}</Title>
       </ProfileDiv>
       <FontAwesomeIcon icon={open ? faChevronDown : faChevronUp}></FontAwesomeIcon>
-      {open && <ProfileList />}
+      {open && <ProfileList onClick={() => setOpen(false)} />}
     </Button>
   );
 }
