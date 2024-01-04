@@ -12,7 +12,7 @@ use super::IpcResponse;
 
 fn file_path(app_handle: &tauri::AppHandle) -> PathBuf {
     let conf = &app_handle.config();
-    tauri::api::path::app_data_dir(conf).unwrap()
+    tauri::api::path::app_data_dir(conf).unwrap().join("games.json")
 }
 
 fn read_file(app_handle: &tauri::AppHandle) -> GamesRecord {

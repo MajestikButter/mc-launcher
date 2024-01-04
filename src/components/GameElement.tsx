@@ -33,6 +33,7 @@ const GameIcon = styled(Icon)`
 const Button = styled.button<{ $active: boolean }>`
   display: flex;
   width: 100%;
+  aspect-ratio: 3.33;
   overflow: hidden;
   padding: 0;
   margin-bottom: 3px;
@@ -43,7 +44,7 @@ const Button = styled.button<{ $active: boolean }>`
 `;
 const Title = styled.text`
   display: inline;
-  height: 20%;
+  height: 50%;
   flex-grow: 1;
   font-size: 7mm;
   font-weight: bold;

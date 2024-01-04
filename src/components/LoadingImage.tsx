@@ -1,6 +1,7 @@
 import { resolveResource } from "@tauri-apps/api/path";
 import { convertFileSrc } from "@tauri-apps/api/tauri";
 import { useEffect, useState } from "preact/hooks";
+import styled from "styled-components";
 
 interface LoadingImageProperties {
   className?: string;
@@ -21,9 +22,9 @@ export function LoadingImage(props: LoadingImageProperties) {
     if (!src) return;
     getFileSrc(src ?? DEFAULT_IMG).then((srcUrl) => {
       const img = new Image();
-      console.log("loading", srcUrl);
+      console.log("loading", src);
       img.onload = () => {
-        console.log("loaded", srcUrl);
+        console.log("loaded", src);
         setSrc(srcUrl);
       };
       img.src = srcUrl;
@@ -31,5 +32,9 @@ export function LoadingImage(props: LoadingImageProperties) {
     return () => setSrc(DEFAULT_IMG);
   }, [src]);
 
-  return <img className={className} src={loadedSrc} />;
+  return <Img className={className} src={loadedSrc} />;
 }
+
+const Img = styled.img`
+  user-select: none;
+`;

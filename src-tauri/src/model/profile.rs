@@ -48,6 +48,27 @@ fn resolve_path_str(data_dir: &PathBuf, path: &str) -> Result<PathBuf> {
     }
 }
 
+fn try_move_folder(from: &str, count: i32) {
+    if count > 100 {
+        panic!("Failed to move folder over 100 times")
+    }
+    if count > 0 {
+        let new = format!("{from}.copy_{count}");
+        if Path::new(&new).exists() {
+            try_move_folder(from, count + 1);
+        } else {
+            let _ = fs::rename(from, new);
+        }
+    } else {
+        let new = format!("{from}.copy");
+        if Path::new(&new).exists() {
+            try_move_folder(from, count + 1);
+        } else {
+            let _ = fs::rename(from, new);
+        }
+    }
+}
+
 fn remove_destination(path: &Path) {
     if path.is_symlink() {
         println!("Removing existing symbolic link");
@@ -58,8 +79,7 @@ fn remove_destination(path: &Path) {
         }
     } else {
         println!("Existing directory is not a symbolic link, attempting to move");
-        // TODO: IMPLEMENT MOVING EXISTING FILES
-        panic!("Unimplemented");
+        try_move_folder(path.to_str().unwrap(), 0);
     }
 }
 

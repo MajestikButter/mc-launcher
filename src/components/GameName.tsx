@@ -11,8 +11,12 @@ const Title = styled.h1`
   margin: auto;
   height: 5vh;
   padding: 0.1em;
+
   font-size: 3vw;
   font-family: inherit;
+
+  user-select: none;
+
   color: #0f0f0f;
   background-color: #ffffff;
   transition: border-color 0.25s;
