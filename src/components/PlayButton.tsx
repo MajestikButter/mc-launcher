@@ -35,6 +35,7 @@ const Button = styled.button`
     border-color: #145425;
   }
   &:active {
+    border-color: #145425;
     background-color: #218634;
     transform: translate(-50%, 2px);
   }

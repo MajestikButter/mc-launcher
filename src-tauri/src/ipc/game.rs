@@ -1,5 +1,7 @@
+use std::{path::PathBuf, process::Command};
+
 use crate::{
-    model::{self, GamesRecord, create_symlink},
+    model::{self, load_profile, GamesRecord},
     Error,
 };
 
@@ -8,11 +10,16 @@ use tauri::{command, Manager};
 
 use super::IpcResponse;
 
-fn read_file() -> GamesRecord {
-    model::read_games_file("./data/games.json")
+fn file_path(app_handle: &tauri::AppHandle) -> PathBuf {
+    let conf = &app_handle.config();
+    tauri::api::path::app_data_dir(conf).unwrap()
 }
-fn write_file(record: &GamesRecord) {
-    model::write_games_file("./data/games.json", record)
+
+fn read_file(app_handle: &tauri::AppHandle) -> GamesRecord {
+    model::read_games_file(file_path(app_handle))
+}
+fn write_file(app_handle: &tauri::AppHandle, record: &GamesRecord) {
+    model::write_games_file(file_path(app_handle), record)
 }
 
 #[derive(Serialize)]
@@ -35,8 +42,8 @@ pub struct LimitedGameInfo {
 }
 
 #[command]
-pub fn play_game(game: String) -> IpcResponse<()> {
-    let file = read_file();
+pub fn play_game(app_handle: tauri::AppHandle, game: String) -> IpcResponse<()> {
+    let file = read_file(&app_handle);
     let obj = file.get(&game);
 
     let res = match obj {
@@ -45,10 +52,12 @@ pub fn play_game(game: String) -> IpcResponse<()> {
         ))),
         Some(obj) => {
             let prof = obj.profiles.get(&obj.selectedProfile).unwrap();
-            let from = &obj.destination;
-            let to = &prof.path;
-            let sec_id = &obj.securityID;
-            create_symlink(from, to, sec_id);
+            load_profile(file_path(&app_handle), obj, prof);
+            Command::new("rundll32.exe")
+                .arg("url.dll,FileProtocolHandler")
+                .arg(&obj.launchScript)
+                .output()
+                .expect("Failed to launch game");
             Ok(())
         }
     };
@@ -56,8 +65,12 @@ pub fn play_game(game: String) -> IpcResponse<()> {
 }
 
 #[command]
-pub fn select_profile(game: String, profile: String) -> IpcResponse<()> {
-    let mut file = read_file();
+pub fn select_profile(
+    app_handle: tauri::AppHandle,
+    game: String,
+    profile: String,
+) -> IpcResponse<()> {
+    let mut file = read_file(&app_handle);
     let obj = file.get_mut(&game);
 
     let res = match obj {
@@ -66,7 +79,7 @@ pub fn select_profile(game: String, profile: String) -> IpcResponse<()> {
         ))),
         Some(obj) => {
             obj.selectedProfile = profile.to_string();
-            write_file(&file);
+            write_file(&app_handle, &file);
             Ok(())
         }
     };
@@ -78,7 +91,7 @@ pub fn request_profiles_update(
     app_handle: tauri::AppHandle,
     name: String,
 ) -> IpcResponse<GameProfilesInfo> {
-    let file = read_file();
+    let file = read_file(&app_handle);
     let obj = file.get(&name);
 
     let res = match obj {
@@ -108,7 +121,7 @@ pub fn request_profiles_update(
 
 #[command]
 pub fn request_games_update(app_handle: tauri::AppHandle) -> IpcResponse<Vec<LimitedGameInfo>> {
-    let res = read_file();
+    let res = read_file(&app_handle);
     let mut vec: Vec<LimitedGameInfo> = Vec::new();
     for (name, obj) in res {
         vec.push(LimitedGameInfo {
