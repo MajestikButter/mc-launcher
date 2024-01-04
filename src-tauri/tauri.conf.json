@@ -39,11 +39,11 @@
       {
         "label": "main",
         "fullscreen": false,
+        "center": true,
         "resizable": true,
         "title": "mc-launcher",
-        "width": 800,
-        "height": 600,
-        "alwaysOnTop": true,
+        "width": 900,
+        "height": 550,
         "minWidth": 600,
         "minHeight": 500
       }
