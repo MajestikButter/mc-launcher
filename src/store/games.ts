@@ -1,10 +1,12 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from ".";
+import { VersionType } from "./versions";
 
 export interface GameInfo {
   name: string;
   icon: string;
   background: string;
+  versionType: VersionType;
 }
 
 interface GamesState {

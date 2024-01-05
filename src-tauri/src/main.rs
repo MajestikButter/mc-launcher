@@ -13,10 +13,13 @@ mod model;
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            ipc::select_profile,
-            ipc::request_games_update,
-            ipc::request_profiles_update,
             ipc::play_game,
+            ipc::get_full_profile,
+            ipc::select_profile,
+            ipc::list_game_profiles,
+            ipc::list_versions,
+            ipc::list_games,
+            ipc::select_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

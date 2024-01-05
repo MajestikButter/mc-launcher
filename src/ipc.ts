@@ -1,23 +1,49 @@
 import { invoke } from "@tauri-apps/api";
 import { GameInfo } from "./store/games";
 import { ProfileInfo } from "./store/profiles";
+import { VersionInfo } from "./store/versions";
+
+export interface ListGameProfiles {
+  profiles: ProfileInfo[];
+  selected: string;
+  game: string;
+}
+
+export interface FullProfileInfo {
+  iconPath: string;
+  path: string;
+  subfolders: Record<string, string>;
+  version: string;
+}
 
 interface InvokeRouter {
   select_profile: {
     params: { game: string; profile: string };
     return: void;
   };
+  get_full_profile: {
+    params: { game: string; profile: string };
+    return: FullProfileInfo;
+  };
   play_game: {
     params: { game: string };
     return: void;
   };
-  request_games_update: {
+  list_games: {
     params: void;
     return: GameInfo[];
   };
-  request_profiles_update: {
+  list_versions: {
+    params: void;
+    return: VersionInfo[];
+  };
+  list_game_profiles: {
     params: { name: string };
-    return: { game: string; profiles: ProfileInfo[]; selected: string };
+    return: ListGameProfiles;
+  };
+  select_dir: {
+    params: { path: string };
+    return: string;
   };
 }
 

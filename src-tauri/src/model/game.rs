@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, fs, path::PathBuf};
+use std::{collections::BTreeMap, fs, path::PathBuf, process::Command};
 
 use crate::{consts, Error, Result};
 
-use super::ProfileObject;
+use super::{load_profile, LimitedGameInfo, ProfileObject, version_type_str};
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]
@@ -17,29 +17,32 @@ pub struct GameObject {
     pub destination: String,
     pub securityID: String,
     pub selectedProfile: String,
+    pub useVersion: i8,
 }
 
 impl GameObject {
     pub fn preview_default() -> Self {
         Self {
-            backgroundPath: String::from("./assets/preview.png"),
-            iconPath: String::from("./assets/preview.png"),
+            backgroundPath: String::from("/assets/preview.png"),
+            iconPath: String::from("/assets/preview.png"),
             selectedProfile: String::from("Default"),
             profiles: BTreeMap::from([(String::from("Default"), ProfileObject::preview_default())]),
             launchScript: String::from("minecraft-preview://"),
             destination: String::from(consts::PREVIEW_DESTINATION),
             securityID: String::from(consts::PREVIEW_SECURITY_ID),
+            useVersion: 2,
         }
     }
     pub fn default() -> Self {
         Self {
-            backgroundPath: String::from("./assets/release.png"),
-            iconPath: String::from("./assets/release.png"),
+            backgroundPath: String::from("/assets/release.png"),
+            iconPath: String::from("/assets/release.png"),
             selectedProfile: String::from("Default"),
             profiles: BTreeMap::from([(String::from("Default"), ProfileObject::default())]),
             launchScript: String::from("minecraft://"),
             destination: String::from(consts::RELEASE_DESTINATION),
             securityID: String::from(consts::RELEASE_SECURITY_ID),
+            useVersion: 0,
         }
     }
 }
@@ -67,4 +70,39 @@ pub fn read_games_file(path: PathBuf) -> GamesRecord {
 pub fn write_games_file(path: PathBuf, record: &GamesRecord) {
     let contents = serde_json::to_string(record).unwrap();
     let _ = fs::write(path, contents);
+}
+
+pub fn get_game(record: &GamesRecord, game: String) -> Result<&GameObject> {
+    match record.get(&game) {
+        Some(game) => Ok(game),
+        None => Err(Error::GameDoesNotExist("Game does not exist".to_string())),
+    }
+}
+
+pub fn get_games(record: GamesRecord) -> Vec<LimitedGameInfo> {
+    let mut vec: Vec<LimitedGameInfo> = Vec::new();
+    for (name, obj) in record {
+        vec.push(LimitedGameInfo {
+            name: name,
+            icon: obj.iconPath,
+            background: obj.backgroundPath,
+            versionType: version_type_str(obj.useVersion),
+        })
+    }
+    vec
+}
+
+pub fn play_game(data_dir: PathBuf, record: GamesRecord, game: String) -> Result<()> {
+    let game = get_game(&record, game)?;
+    let prof = game.profiles.get(&game.selectedProfile);
+    if prof.is_some() {
+        let prof = prof.unwrap();
+        load_profile(data_dir, game, prof);
+        Command::new("rundll32.exe")
+            .arg("url.dll,FileProtocolHandler")
+            .arg(&game.launchScript)
+            .output()
+            .expect("Failed to launch game");
+    }
+    Ok(())
 }

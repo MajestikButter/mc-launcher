@@ -13,13 +13,16 @@ export function GameElement(props: GameElementProperties) {
   const { icon, active, name, onClick, onEdit } = props;
 
   return (
-    <Button
-      $active={active}
-      onClick={onClick}
-    >
+    <Button $active={active} onClick={onClick}>
       <GameIcon src={icon} />
       <Title>{name}</Title>
-      <EditButton onClick={onEdit} />
+      <EditButton
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onEdit();
+        }}
+      />
     </Button>
   );
 }

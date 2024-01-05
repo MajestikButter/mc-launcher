@@ -5,6 +5,7 @@ import { GameElement } from "./GameElement";
 import { useState } from "preact/hooks";
 import { ipcInvoke } from "../ipc";
 import { EditDialog } from "./EditDialog";
+import { updateProfiles } from "../store/profiles";
 
 export function GameList() {
   const games = useAppSelector(selectGames);
@@ -20,9 +21,10 @@ export function GameList() {
           name={game.name}
           icon={game.icon}
           active={active == i}
-          onClick={() => {
+          onClick={async () => {
             dispatch(setActive(game.name));
-            ipcInvoke("request_profiles_update", { name: game.name });
+            const data = await ipcInvoke("list_game_profiles", { name: game.name });
+            dispatch(updateProfiles(data));
           }}
           onEdit={() => {
             setEdit(true);
@@ -30,7 +32,7 @@ export function GameList() {
         />
       ))}
       {edit && (
-        <EditDialog>
+        <EditDialog title="Edit Game" onConfirm={() => setEdit(false)}>
           <button onClick={() => setEdit(false)}>Close Dialog</button>
         </EditDialog>
       )}

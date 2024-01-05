@@ -8,6 +8,8 @@ pub enum Error {
 
 	JsonSerde(serde_json::Error),
 
+	Reqwest(reqwest::Error),
+
 	IO(std::io::Error),
 }
 
@@ -16,6 +18,11 @@ pub enum Error {
 impl From<serde_json::Error> for Error {
 	fn from(val: serde_json::Error) -> Self {
 		Error::JsonSerde(val)
+	}
+}
+impl From<reqwest::Error> for Error {
+	fn from(val: reqwest::Error) -> Self {
+		Error::Reqwest(val)
 	}
 }
 impl From<std::io::Error> for Error {

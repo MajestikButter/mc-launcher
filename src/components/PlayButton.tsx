@@ -26,6 +26,7 @@ const Button = styled.button`
   font-size: 1.5em;
   font-weight: bolder;
   transform: translate(-50%, 0);
+  z-index: 2;
 
   color: #ffffff;
   background-color: #2bac43;

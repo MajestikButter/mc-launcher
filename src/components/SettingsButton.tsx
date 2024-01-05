@@ -9,8 +9,10 @@ export function SettingsButton() {
     <Button onClick={() => setEdit(true)}>
       Settings
       {edit && (
-        <EditDialog>
-          <button onClick={() => setEdit(false)}>Close Dialog</button>
+        <EditDialog title="Settings" onConfirm={() => {
+          setEdit(false);
+        }}>
+          Test: <input value="default"></input>
         </EditDialog>
       )}
     </Button>

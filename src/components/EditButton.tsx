@@ -6,14 +6,5 @@ interface EditButtonProperties {
 }
 export function EditButton(props: EditButtonProperties) {
   const { onClick } = props;
-  return (
-    <FontAwesomeIcon
-      icon={faEdit}
-      onClick={(e: MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onClick(e);
-      }}
-    />
-  );
+  return <FontAwesomeIcon icon={faEdit} onClick={(e: MouseEvent) => onClick(e)} />;
 }

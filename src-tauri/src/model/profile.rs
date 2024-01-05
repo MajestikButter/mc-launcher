@@ -1,15 +1,17 @@
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::BTreeMap,
     fs,
-    io::Result,
     os::windows::fs::symlink_dir,
-    path::{Path, PathBuf}, collections::BTreeMap,
+    path::{Path, PathBuf},
 };
 
 use winapi::um::winnt::{FILE_ALL_ACCESS, PSID};
 use windows_acl::{acl::ACL, helper::string_to_sid};
 
-use super::GameObject;
+use crate::Result;
+
+use super::{get_game, GameObject, GameProfilesInfo, GamesRecord, ProfileInfo};
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]
@@ -17,32 +19,56 @@ pub struct ProfileObject {
     pub iconPath: String,
     pub path: String,
     pub subfolders: BTreeMap<String, String>,
+    pub version: String,
 }
 impl ProfileObject {
     pub fn preview_default() -> Self {
         Self {
-            iconPath: String::from("./assets/preview.png"),
-            path: String::from("./profiles/preview/default"),
+            iconPath: String::from("/assets/preview.png"),
+            path: String::from("/profiles/preview/default"),
             subfolders: BTreeMap::new(),
+            version: String::from("latest"),
         }
     }
     pub fn default() -> Self {
         Self {
-            iconPath: String::from("./assets/release.png"),
-            path: String::from("./profiles/release/default"),
+            iconPath: String::from("/assets/release.png"),
+            path: String::from("/profiles/release/default"),
             subfolders: BTreeMap::new(),
+            version: String::from("latest"),
+        }
+    }
+}
+impl From<&ProfileObject> for ProfileObject {
+    fn from(val: &ProfileObject) -> Self {
+        ProfileObject {
+            iconPath: val.iconPath.clone(),
+            path: val.path.clone(),
+            subfolders: val.subfolders.clone(),
+            version: val.version.clone(),
         }
     }
 }
 
-fn resolve_path_str(data_dir: &PathBuf, path: &str) -> Result<PathBuf> {
+pub fn resolve_path_str(data_dir: &PathBuf, path: &str) -> Result<PathBuf> {
     let base_dirs = directories::BaseDirs::new().unwrap();
     let local_app_data = base_dirs.data_local_dir();
     let local_app_data_str = local_app_data.to_str().unwrap();
     let replaced = path.replace("%localappdata%", local_app_data_str);
     let path = Path::new(&replaced);
     if !path.is_absolute() {
-        Ok(data_dir.join(path))
+        let mut data_dir = data_dir.clone();
+        if path.is_relative() {
+            if path.starts_with("/") {
+                let formatted = &replaced[1..];
+                data_dir.push(formatted);
+            } else {
+                data_dir.push(path);
+            }
+            Ok(data_dir)
+        } else {
+            Ok(data_dir)
+        }
     } else {
         Ok(path.to_path_buf())
     }
@@ -173,4 +199,24 @@ pub fn load_profile(data_dir: PathBuf, game: &GameObject, profile: &ProfileObjec
         let joined_str = joined.to_str().unwrap();
         create_symlink(&data_dir, joined_str, &abs, sec_id);
     }
+}
+
+pub fn get_profiles(record: GamesRecord, game: String) -> Result<GameProfilesInfo> {
+    let name = game;
+    let game = get_game(&record, name.clone())?;
+
+    let mut profs = Vec::new();
+    for (prof_name, prof) in &game.profiles {
+        profs.push(ProfileInfo {
+            game: name.clone(),
+            name: prof_name.to_string(),
+            icon: prof.iconPath.to_string(),
+            version: prof.version.to_string(),
+        })
+    }
+    Ok(GameProfilesInfo {
+        game: name,
+        profiles: profs,
+        selected: game.selectedProfile.to_string(),
+    })
 }

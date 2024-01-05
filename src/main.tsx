@@ -13,16 +13,21 @@ import { ProfileDropdown } from "./components/ProfileDropdown";
 import { PlayButton } from "./components/PlayButton";
 
 import store from "./store";
-import "./event";
 import { ipcInvoke } from "./ipc";
-import { sleep } from "./utils";
+import { updateProfiles } from "./store/profiles";
+import { updateGames } from "./store/games";
+import { updateVersions } from "./store/versions";
+import { VersionDropdown } from "./components/VersionDropdown";
 
-await sleep(50);
-const game = (await ipcInvoke("request_games_update"))[0];
-await sleep(50);
-if (game) {
-  await ipcInvoke("request_profiles_update", { name: game.name });
-  await sleep(50);
+const games = await ipcInvoke("list_games");
+store.dispatch(updateGames(games));
+const game = games[0];
+const name = game?.name;
+if (name) {
+  const vers = await ipcInvoke("list_versions");
+  store.dispatch(updateVersions(vers));
+  const profs = await ipcInvoke("list_game_profiles", { name });
+  store.dispatch(updateProfiles(profs));
 }
 
 render(
@@ -37,6 +42,7 @@ render(
         <GameBackground />
         <ProfileDropdown />
         <PlayButton />
+        <VersionDropdown />
       </PageArea>
     </Window>
   </Provider>,

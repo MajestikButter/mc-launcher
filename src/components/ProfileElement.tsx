@@ -5,20 +5,14 @@ import { EditButton } from "./EditButton";
 interface ProfileElementProperties {
   icon?: string;
   name: string;
-  active: boolean;
   onClick: () => void;
   onEdit: () => void;
 }
 export function ProfileElement(props: ProfileElementProperties) {
-  const { icon, active, name, onClick, onEdit } = props;
+  const { icon, name, onClick, onEdit } = props;
   return (
     <Button
-      $active={active}
-      onClick={(e: MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onClick();
-      }}
+      onClick={onClick}
     >
       <ProfileIcon src={icon} />
       <Title>{name}</Title>
@@ -31,7 +25,7 @@ const ProfileIcon = styled(Icon)`
   height: 100%;
 `;
 
-const Button = styled.button<{ $active: boolean }>`
+const Button = styled.button`
   display: flex;
   height: 4vw;
   width: 100%;

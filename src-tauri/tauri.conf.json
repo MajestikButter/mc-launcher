@@ -23,6 +23,10 @@
         "all": false,
         "asset": true,
         "assetScope": ["$RESOURCE/**/*"]
+      },
+      "dialog": {
+        "all": false,
+        "open": true
       }
     },
     "bundle": {
