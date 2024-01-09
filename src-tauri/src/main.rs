@@ -16,10 +16,13 @@ fn main() {
             ipc::play_game,
             ipc::get_full_profile,
             ipc::select_profile,
+            ipc::select_profile_version,
             ipc::list_game_profiles,
             ipc::list_versions,
             ipc::list_games,
             ipc::select_dir,
+            ipc::get_settings,
+            ipc::set_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

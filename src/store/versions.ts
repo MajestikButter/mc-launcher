@@ -10,20 +10,15 @@ export enum VersionType {
 export interface VersionInfo {
   versionType: VersionType;
   name: string;
+  installed: boolean;
 }
 
 interface VersionsState {
   versions: VersionInfo[];
-  latest: { [k in VersionType]: string };
 }
 
 const initialState: VersionsState = {
   versions: [],
-  latest: {
-    [VersionType.release]: "1.20.0.1",
-    [VersionType.preview]: "1.20.0.23",
-    [VersionType.custom]: "",
-  },
 };
 
 const versSlice = createSlice({

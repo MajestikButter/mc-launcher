@@ -30,6 +30,11 @@ if (name) {
   store.dispatch(updateProfiles(profs));
 }
 
+store.subscribe(() => {
+  const { settings } = store.getState().settings;
+  ipcInvoke("set_settings", { settings });
+});
+
 render(
   <Provider store={store}>
     <Window>

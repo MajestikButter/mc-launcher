@@ -6,3 +6,6 @@ pub const PREVIEW_SECURITY_ID: &str =
 pub const RELEASE_DESTINATION: &str =
     "%localappdata%/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState/games/com.mojang";
 pub const PREVIEW_DESTINATION: &str = "%localappdata%/Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState/games/com.mojang";
+
+pub const MINECRAFT: &str = "Microsoft.MinecraftUWP_8wekyb3d8bbwe";
+pub const MINECRAFT_PREVIEW: &str = "Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe";

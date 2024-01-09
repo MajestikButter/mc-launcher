@@ -29,9 +29,10 @@ pub struct LimitedGameInfo {
 pub struct VersionInfo {
     pub name: String,
     pub versionType: String,
+    pub installed: bool,
 }
 impl VersionInfo {
-    pub fn new(version_type: String, name: String) -> Self {
-        Self { versionType: version_type, name: name }
+    pub fn new(version_type: String, name: String, installed: bool) -> Self {
+        Self { versionType: version_type, name: name, installed: installed }
     }
 }

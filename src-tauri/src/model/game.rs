@@ -1,9 +1,12 @@
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, fs, path::PathBuf, process::Command};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 
 use crate::{consts, Error, Result};
 
-use super::{load_profile, LimitedGameInfo, ProfileObject, version_type_str};
+use super::{
+    download_version, version_type_str, LimitedGameInfo,
+    ProfileObject, Version,
+};
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]
@@ -92,17 +95,43 @@ pub fn get_games(record: GamesRecord) -> Vec<LimitedGameInfo> {
     vec
 }
 
-pub fn play_game(data_dir: PathBuf, record: GamesRecord, game: String) -> Result<()> {
+pub async fn play_game(
+    data_dir: PathBuf,
+    record: GamesRecord,
+    game: String,
+    with_version: bool,
+) -> Result<()> {
     let game = get_game(&record, game)?;
     let prof = game.profiles.get(&game.selectedProfile);
     if prof.is_some() {
         let prof = prof.unwrap();
-        load_profile(data_dir, game, prof);
-        Command::new("rundll32.exe")
-            .arg("url.dll,FileProtocolHandler")
-            .arg(&game.launchScript)
-            .output()
-            .expect("Failed to launch game");
+
+        // if with_version && (game.useVersion == 0 || game.useVersion == 2) {
+        //     if prof.version == "latest" {
+        let ver = Version::latest(game.useVersion);
+        download_version(ver.id, "1".to_owned(), String::new()).await;
+        // load_version(data_dir.clone(), ver)?;
+        //     } else {
+        //         let version = get_version(prof.version.clone()).await?;
+        //         match version {
+        //             Some(version) => {
+        //                 load_version(data_dir.clone(), version)?;
+        //             }
+        //             None => {
+        //                 return Err(Error::VersionDoesNotExist(String::from(
+        //                     "Version does not exist",
+        //                 )));
+        //             }
+        //         }
+        //     }
+        // }
+
+        // load_profile(data_dir, game, prof)?;
+        // Command::new("rundll32.exe")
+        //     .arg("url.dll,FileProtocolHandler")
+        //     .arg(&game.launchScript)
+        //     .output()
+        //     .expect("Failed to launch game");
     }
     Ok(())
 }

@@ -1,12 +1,14 @@
 import { configureStore } from "@reduxjs/toolkit";
 import gamesReducer from "./games";
 import profsReducer from "./profiles";
+import setsReducer from "./settings";
 import versReducer from "./versions";
 
 const store = configureStore({
   reducer: {
     games: gamesReducer,
     profiles: profsReducer,
+    settings: setsReducer,
     versions: versReducer,
   },
 });

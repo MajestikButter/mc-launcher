@@ -53,10 +53,23 @@ const profsSlice = createSlice({
         action.payload.selected,
       );
     },
+    updateProfile: (
+      state,
+      action: PayloadAction<
+        { game: string; name: string; data: Partial<Omit<ProfileInfo, "name">> }
+      >,
+    ) => {
+      const pay = action.payload;
+      const idx = state.profiles.findIndex((v) =>
+        v.game === pay.game && v.name === pay.name
+      );
+      if (idx === -1) return;
+      state.profiles[idx] = { ...state.profiles[idx], ...pay.data };
+    },
   },
 });
 
-export const { setActive, updateProfiles } = profsSlice.actions;
+export const { setActive, updateProfiles, updateProfile } = profsSlice.actions;
 
 export const selectProfiles = ({ profiles }: RootState) => profiles.profiles;
 

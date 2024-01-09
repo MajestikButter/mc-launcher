@@ -1,4 +1,6 @@
+use super::IpcResponse;
 use std::path::PathBuf;
+use tauri::{api::dialog, command};
 
 use crate::{
     model::{
@@ -7,10 +9,6 @@ use crate::{
     },
     Error,
 };
-
-use tauri::{api::dialog, command};
-
-use super::IpcResponse;
 
 fn dir_path(app_handle: &tauri::AppHandle) -> PathBuf {
     let conf = &app_handle.config();
@@ -29,10 +27,17 @@ fn write_file(app_handle: &tauri::AppHandle, record: &GamesRecord) {
 }
 
 #[command]
-pub fn play_game(app_handle: tauri::AppHandle, game: String) -> IpcResponse<()> {
-    let data_dir: PathBuf = file_path(&app_handle);
+pub async fn play_game(
+    app_handle: tauri::AppHandle,
+    game: String,
+    with_version: bool,
+) -> IpcResponse<()> {
+    let data_dir: PathBuf = dir_path(&app_handle);
     let file: GamesRecord = read_file(&app_handle);
-    model::play_game(data_dir, file, game).into()
+    match model::play_game(data_dir, file, game, with_version).await {
+        Ok(_) => Ok(()).into(),
+        Err(e) => Err(e).into(),
+    }
 }
 
 #[command]
@@ -72,6 +77,28 @@ pub fn select_profile(
 }
 
 #[command]
+pub fn select_profile_version(
+    app_handle: tauri::AppHandle,
+    game: String,
+    profile: String,
+    version: String,
+) -> IpcResponse<()> {
+    let mut file: GamesRecord = read_file(&app_handle);
+    match file.get_mut(&game) {
+        Some(obj) => match obj.profiles.get_mut(&profile) {
+            None => return Ok(()).into(),
+            Some(prof) => {
+                obj.selectedProfile = profile.to_string();
+                prof.version = version;
+                write_file(&app_handle, &file);
+                Ok(()).into()
+            }
+        },
+        None => Err(Error::GameDoesNotExist("Game does not exist".to_string())).into(),
+    }
+}
+
+#[command]
 pub fn list_game_profiles(
     app_handle: tauri::AppHandle,
     name: String,
@@ -84,12 +111,19 @@ pub fn list_game_profiles(
 }
 
 #[command]
-pub async fn list_versions() -> IpcResponse<Vec<VersionInfo>> {
-    match model::get_all_versions().await {
+pub async fn list_versions(app_handle: tauri::AppHandle) -> IpcResponse<Vec<VersionInfo>> {
+    let data_dir = dir_path(&app_handle);
+    match model::get_all_versions(data_dir.clone()).await {
         Ok(vers) => {
             let infos = vers
                 .into_iter()
-                .map(|v| VersionInfo::new(version_type_str(v.version_type), v.version))
+                .map(|v| {
+                    VersionInfo::new(
+                        version_type_str(v.version_type),
+                        v.version.clone(),
+                        v.installed(data_dir.clone()),
+                    )
+                })
                 .collect();
             Ok(infos).into()
         }
@@ -108,7 +142,6 @@ pub fn list_games(app_handle: tauri::AppHandle) -> IpcResponse<Vec<LimitedGameIn
 pub fn select_dir(app_handle: tauri::AppHandle, path: String) -> IpcResponse<String> {
     let data_dir: PathBuf = dir_path(&app_handle);
     let resolved = resolve_path_str(&data_dir, path.as_str()).unwrap();
-    println!("{}", resolved.as_path().to_str().unwrap());
     let folder = dialog::blocking::FileDialogBuilder::default()
         .set_title("Pick Directory")
         .set_directory(

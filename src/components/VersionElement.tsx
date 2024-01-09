@@ -2,13 +2,14 @@ import styled from "styled-components";
 
 interface VersionElementProperties {
   name: string;
+  installed?: boolean;
   onClick: () => void;
 }
 export function VersionElement(props: VersionElementProperties) {
-  const { name, onClick } = props;
+  const { name, installed, onClick } = props;
   return (
     <Button onClick={onClick}>
-      <Title>{name}</Title>
+      <Title>{name}{installed && " [Installed]"}</Title>
     </Button>
   );
 }

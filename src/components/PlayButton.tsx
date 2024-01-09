@@ -1,14 +1,19 @@
+import { selectVersionSwitching } from "../store/settings";
 import { useAppSelector } from "../hooks";
 import { ipcInvoke } from "../ipc";
 import { selectActiveGame } from "../store/games";
 import styled from "styled-components";
 
+let handlePlay = false;
 export function PlayButton() {
   const game = useAppSelector(selectActiveGame)?.name;
+  const withVersion = useAppSelector(selectVersionSwitching);
   return (
     <Button
       onClick={() => {
-        if (game) ipcInvoke("play_game", { game });
+        if (!game || handlePlay) return;
+        handlePlay = true;
+        ipcInvoke("play_game", { game, withVersion }).finally(() => (handlePlay = false));
       }}
     >
       Play

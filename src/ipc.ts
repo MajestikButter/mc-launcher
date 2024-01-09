@@ -16,9 +16,18 @@ export interface FullProfileInfo {
   version: string;
 }
 
+export interface Settings {
+  keepOpen: boolean;
+  versionSwitching: boolean;
+}
+
 interface InvokeRouter {
   select_profile: {
     params: { game: string; profile: string };
+    return: void;
+  };
+  select_profile_version: {
+    params: { game: string; profile: string; version: string };
     return: void;
   };
   get_full_profile: {
@@ -26,7 +35,7 @@ interface InvokeRouter {
     return: FullProfileInfo;
   };
   play_game: {
-    params: { game: string };
+    params: { game: string; withVersion: boolean };
     return: void;
   };
   list_games: {
@@ -44,6 +53,14 @@ interface InvokeRouter {
   select_dir: {
     params: { path: string };
     return: string;
+  };
+  get_settings: {
+    params: void;
+    return: Settings;
+  };
+  set_settings: {
+    params: { settings: Settings };
+    return: void;
   };
 }
 
