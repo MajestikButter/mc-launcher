@@ -9,7 +9,7 @@ export function VersionElement(props: VersionElementProperties) {
   const { name, installed, onClick } = props;
   return (
     <Button onClick={onClick}>
-      <Title>{name}{installed && " [Installed]"}</Title>
+      <Title>{name}<br/>{installed && " [Installed]"}</Title>
     </Button>
   );
 }

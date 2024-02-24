@@ -1,23 +1,14 @@
 import "./styles.css";
-import { render } from "preact";
-import { Provider } from "react-redux";
+import {render} from "preact";
+import {Provider} from "react-redux";
 
-import { Window } from "./components/Window";
-import { LeftPanel } from "./components/LeftPanel";
-import { GameList } from "./components/GameList";
-import { SettingsButton } from "./components/SettingsButton";
-import { PageArea } from "./components/PageArea";
-import { GameName } from "./components/GameName";
-import { GameBackground } from "./components/GameBackground";
-import { ProfileDropdown } from "./components/ProfileDropdown";
-import { PlayButton } from "./components/PlayButton";
-
+import {App} from "./App.tsx";
+import {ipcInvoke} from "./ipc";
 import store from "./store";
-import { ipcInvoke } from "./ipc";
-import { updateProfiles } from "./store/profiles";
-import { updateGames } from "./store/games";
-import { updateVersions } from "./store/versions";
-import { VersionDropdown } from "./components/VersionDropdown";
+import {updateProfiles} from "./store/profiles";
+import {updateGames} from "./store/games";
+import {updateVersions} from "./store/versions";
+import {updateSettings} from "./store/settings.ts";
 
 const games = await ipcInvoke("list_games");
 store.dispatch(updateGames(games));
@@ -26,30 +17,13 @@ const name = game?.name;
 if (name) {
   const vers = await ipcInvoke("list_versions");
   store.dispatch(updateVersions(vers));
-  const profs = await ipcInvoke("list_game_profiles", { name });
+  const profs = await ipcInvoke("list_game_profiles", {name});
   store.dispatch(updateProfiles(profs));
+  const settings = await ipcInvoke("get_settings");
+  store.dispatch(updateSettings(settings));
 }
 
-store.subscribe(() => {
-  const { settings } = store.getState().settings;
-  ipcInvoke("set_settings", { settings });
-});
-
 render(
-  <Provider store={store}>
-    <Window>
-      <LeftPanel>
-        <GameList />
-        <SettingsButton />
-      </LeftPanel>
-      <PageArea>
-        <GameName />
-        <GameBackground />
-        <ProfileDropdown />
-        <PlayButton />
-        <VersionDropdown />
-      </PageArea>
-    </Window>
-  </Provider>,
+  <Provider store={store}><App/></Provider>,
   document.getElementById("root")!
 );

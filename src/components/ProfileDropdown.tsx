@@ -1,14 +1,13 @@
 import styled from "styled-components";
-import { useState } from "preact/hooks";
-import { useAppDispatch, useAppSelector } from "../hooks";
-import { selectActiveProfile, selectGameProfiles } from "../store/profiles";
-import { Dropdown } from "./Dropdown";
-import { setActive } from "../store/games";
-import { FullProfileInfo, ipcInvoke } from "../ipc";
-import { ProfileElement } from "./ProfileElement";
-import { EditDialog } from "./EditDialog";
-import { Icon } from "./Icon";
-import { DirectoryPicker } from "./DirectoryPicker";
+import {useState} from "preact/hooks";
+import {useAppDispatch, useAppSelector} from "../hooks";
+import {selectActiveProfile, selectGameProfiles, updateProfile, setActive} from "../store/profiles";
+import {Dropdown} from "./Dropdown";
+import {FullProfileInfo, ipcInvoke} from "../ipc";
+import {ProfileElement} from "./ProfileElement";
+import {EditDialog} from "./EditDialog";
+import {Icon} from "./Icon";
+import {DirectoryPicker} from "./DirectoryPicker";
 
 export function ProfileDropdown() {
   const activeProf = useAppSelector(selectActiveProfile);
@@ -16,7 +15,7 @@ export function ProfileDropdown() {
 
   const profiles = useAppSelector((state) => selectGameProfiles(state, game));
 
-  const [edit, setEdit] = useState<FullProfileInfo | null>(null);
+  const [edit, setEdit] = useState<{ info: FullProfileInfo, name: string } | null>(null);
   const dispatch = useAppDispatch();
 
   return (
@@ -28,12 +27,23 @@ export function ProfileDropdown() {
             setEdit(null);
           }}
         >
-          Path: <DirectoryPicker initialDir={edit.path} />
+          Icon Path:
+          <DirectoryPicker initialDir={edit.info.iconPath} picked={(newPath) => {
+            console.log(newPath);
+            dispatch(updateProfile({game, name: edit.name, data: {icon: newPath}}));
+            ipcInvoke("update_profile", {game, profile: edit.name, data: {iconPath: newPath}});
+          }}
+          />
+          Path:
+          <DirectoryPicker initialDir={edit.info.path} picked={(newPath) => {
+            ipcInvoke("update_profile", {game, profile: edit.name, data: {path: newPath}})
+          }}
+          />
         </EditDialog>
       )}
       <ProfileDrop
         selected={[
-          activeProf?.icon && <DropIcon src={activeProf?.icon} />,
+          activeProf?.icon && <DropIcon src={activeProf?.icon}/>,
           <Title>{activeProf?.name ?? "Unknown"}</Title>,
         ]}
       >
@@ -42,12 +52,12 @@ export function ProfileDropdown() {
             name={prof.name}
             icon={prof.icon}
             onClick={() => {
-              dispatch(setActive(game));
-              ipcInvoke("select_profile", { game, profile: prof.name });
+              dispatch(setActive(prof.name));
+              ipcInvoke("select_profile", {game, profile: prof.name});
             }}
             onEdit={async () => {
-              const info = await ipcInvoke("get_full_profile", { game, profile: prof.name });
-              setEdit(info);
+              const info = await ipcInvoke("get_full_profile", {game, profile: prof.name});
+              setEdit({info, name: prof.name});
             }}
           />
         ))}

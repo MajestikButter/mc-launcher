@@ -2,9 +2,10 @@ import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from ".";
 
 export enum VersionType {
-  release = "release",
-  preview = "preview",
-  custom = "custom",
+  none = -1,
+  release = 0,
+  preview = 2,
+  custom = 3,
 }
 
 export interface VersionInfo {

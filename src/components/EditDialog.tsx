@@ -60,4 +60,5 @@ const Dialog = styled.div`
 const DialogContent = styled.div`
   margin-top: 10px;
   flex-grow: 1;
+  overflow-y: auto;
 `;

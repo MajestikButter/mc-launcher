@@ -1,12 +1,20 @@
-import { invoke } from "@tauri-apps/api";
-import { GameInfo } from "./store/games";
-import { ProfileInfo } from "./store/profiles";
-import { VersionInfo } from "./store/versions";
+import {invoke} from "@tauri-apps/api";
+import {GameInfo} from "./store/games";
+import {ProfileInfo} from "./store/profiles";
+import {VersionInfo, VersionType} from "./store/versions";
 
 export interface ListGameProfiles {
   profiles: ProfileInfo[];
   selected: string;
   game: string;
+}
+
+export interface FullGameInfo {
+  iconPath: string;
+  backgroundPath: string;
+  destination: string;
+  launchScript: string;
+  useVersion: VersionType;
 }
 
 export interface FullProfileInfo {
@@ -19,6 +27,8 @@ export interface FullProfileInfo {
 export interface Settings {
   keepOpen: boolean;
   versionSwitching: boolean;
+  profilesFolder: string;
+  versionsFolder: string;
 }
 
 interface InvokeRouter {
@@ -26,13 +36,13 @@ interface InvokeRouter {
     params: { game: string; profile: string };
     return: void;
   };
-  select_profile_version: {
-    params: { game: string; profile: string; version: string };
-    return: void;
-  };
   get_full_profile: {
     params: { game: string; profile: string };
     return: FullProfileInfo;
+  };
+  update_profile: {
+    params: { game: string; profile: string; data: Partial<FullProfileInfo> };
+    return: void;
   };
   play_game: {
     params: { game: string; withVersion: boolean };
@@ -41,6 +51,14 @@ interface InvokeRouter {
   list_games: {
     params: void;
     return: GameInfo[];
+  };
+  get_full_game: {
+    params: { game: string };
+    return: FullGameInfo;
+  };
+  update_game: {
+    params: { game: string; data: Partial<FullGameInfo> };
+    return: void;
   };
   list_versions: {
     params: void;
@@ -62,6 +80,10 @@ interface InvokeRouter {
     params: { settings: Settings };
     return: void;
   };
+  import_version: {
+    params: void;
+    return: void;
+  }
 }
 
 type OptionalInvoke = {
@@ -85,7 +107,7 @@ export async function ipcInvoke<T extends keyof InvokeRouter>(
 ): Promise<InvokeRouter[T]["return"]> {
   if (typeof method !== "string") return;
   console.log("Invoking", method, "with", params);
-  const response: any = await invoke(method, { ...params });
+  const response: any = await invoke(method, {...params});
   if (response.error != null) {
     console.error("ipcInvoke error", response);
     throw new Error(response.error);

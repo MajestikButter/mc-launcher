@@ -1,8 +1,9 @@
-import { useState } from "preact/hooks";
+import {useState} from "preact/hooks";
 import styled from "styled-components";
-import { EditDialog } from "./EditDialog";
-import { useAppDispatch, useAppSelector } from "../hooks";
-import { selectSettings, updateSettings } from "../store/settings";
+import {EditDialog} from "./EditDialog";
+import {useAppDispatch, useAppSelector} from "../hooks";
+import {selectSettings, updateSettings} from "../store/settings";
+import {DirectoryPicker} from "./DirectoryPicker.tsx";
 
 export function SettingsButton() {
   const [edit, setEdit] = useState(false);
@@ -22,16 +23,27 @@ export function SettingsButton() {
           <input
             type="checkbox"
             checked={settings.keepOpen}
-            onClick={() => dispatch(updateSettings({ keepOpen: !settings.keepOpen }))}
+            onClick={() => dispatch(updateSettings({keepOpen: !settings.keepOpen}))}
           />{" "}
           Keep Open
-          <br />
+          <br/>
           <input
             type="checkbox"
             checked={settings.versionSwitching}
-            onClick={() => dispatch(updateSettings({ versionSwitching: !settings.versionSwitching }))}
+            onClick={() => dispatch(updateSettings({versionSwitching: !settings.versionSwitching}))}
           />{" "}
           Version Switching
+          <br/>
+          Profiles Folder:
+          <DirectoryPicker initialDir={settings.profilesFolder} picked={(newPath) => {
+            dispatch(updateSettings({profilesFolder: newPath}))
+          }}
+          />
+          Versions Folder:
+          <DirectoryPicker initialDir={settings.versionsFolder} picked={(newPath) => {
+            dispatch(updateSettings({versionsFolder: newPath}))
+          }}
+          />
         </EditDialog>
       )}
     </Button>
