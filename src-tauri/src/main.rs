@@ -10,6 +10,7 @@ mod consts;
 mod error;
 mod ipc;
 mod model;
+mod utils;
 
 // TODO: Implement CLI
 fn cli_command(name: String, matches: Matches) {

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use tauri::command;
-use crate::ipc::utils::curr_dir_path;
+use crate::utils::curr_dir_path;
 
 use crate::model::{self, SettingsObject};
 

@@ -18,11 +18,11 @@ pub struct SettingsObject {
 }
 
 fn default_profiles() -> String {
-  "%appdata%/com.majestik.mc-launcher/profiles".to_string()
+  "%install%/profiles".to_string()
 }
 
 fn default_versions() -> String {
-  "%appdata%/com.majestik.mc-launcher/versions".to_string()
+  "%install%/versions".to_string()
 }
 
 fn parse_settings(str: &str) -> Result<SettingsObject> {

@@ -30,7 +30,7 @@ impl ProfileObject {
   pub fn preview_default() -> Self {
     Self {
       iconPath: String::from("/assets/preview.png"),
-      path: String::from("/profiles/preview/default"),
+      path: String::from("%profiles%/preview/default"),
       subfolders: BTreeMap::new(),
       version: String::from("latest"),
     }
@@ -38,7 +38,7 @@ impl ProfileObject {
   pub fn default() -> Self {
     Self {
       iconPath: String::from("/assets/release.png"),
-      path: String::from("/profiles/release/default"),
+      path: String::from("%profiles%/release/default"),
       subfolders: BTreeMap::new(),
       version: String::from("latest"),
     }

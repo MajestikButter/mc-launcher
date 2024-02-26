@@ -10,7 +10,7 @@ use crate::{
   },
   Error,
 };
-use crate::ipc::utils::curr_dir_path;
+use crate::utils::curr_dir_path;
 use crate::model::{BareGameObject, extract_package, get_versions_dir, PartialGameObject, PartialProfileObject};
 
 
