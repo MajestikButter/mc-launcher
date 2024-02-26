@@ -5,6 +5,7 @@ use std::{
   os::windows::fs::symlink_dir,
   path::{Path, PathBuf},
 };
+use log::info;
 
 use winapi::um::winnt::{FILE_ALL_ACCESS, PSID};
 use windows_acl::{acl::ACL, helper::string_to_sid};
@@ -67,11 +68,11 @@ pub struct PartialProfileObject {
 
 fn remove_destination(path: &Path) {
   if path.is_symlink() {
-    println!("Removing existing symbolic link");
+    info!("Removing existing symbolic link");
     let rem_res = fs::remove_dir(path);
     if rem_res.is_err() {
       let err = rem_res.err();
-      println!("Could not remove existing symbolic link: {:?}", err);
+      info!("Could not remove existing symbolic link: {:?}", err);
     }
   } else {
     let mut has_file = false;
@@ -84,10 +85,10 @@ fn remove_destination(path: &Path) {
       Err(_) => {}
     }
     if has_file {
-      println!("Existing directory is empty, removing");
+      info!("Existing directory is empty, removing");
       let _ = fs::remove_dir(path);
     } else {
-      println!("Existing directory is not a symbolic link, attempting to move");
+      info!("Existing directory is not a symbolic link, attempting to move");
       try_move_folder(path.to_str().unwrap(), 0);
     }
   }
@@ -102,7 +103,7 @@ fn apply_permissions(path: &str, sec_id: &str) {
   let acl_res = ACL::from_file_path(path, true);
   if acl_res.is_err() {
     let err = acl_res.unwrap_err();
-    println!("ACL Err: {err}");
+    info!("ACL Err: {err}");
   } else {
     let mut acl = acl_res.unwrap();
     let sid_ptr = sid.as_ptr() as PSID;
@@ -111,7 +112,7 @@ fn apply_permissions(path: &str, sec_id: &str) {
       let entries = entry_res.unwrap();
       for entry in entries {
         if entry.mask & FILE_ALL_ACCESS == FILE_ALL_ACCESS {
-          println!("ACL not applied, entry already exists");
+          info!("ACL not applied, entry already exists");
           return;
         }
       }
@@ -120,7 +121,7 @@ fn apply_permissions(path: &str, sec_id: &str) {
     let allow_res = acl.allow(sid_ptr, true, FILE_ALL_ACCESS);
     if allow_res.is_err() {
       let err = allow_res.unwrap_err();
-      println!("Allow Err: {err}");
+      info!("Allow Err: {err}");
     }
   }
 }
@@ -136,12 +137,12 @@ pub fn create_symlink(
 
   if from.is_err() {
     let err = from.unwrap_err();
-    println!("Failed to resolve path: {}\n{}", from_str, err);
+    info!("Failed to resolve path: {}\n{}", from_str, err);
     return Ok(());
   }
   if to.is_err() {
     let err = to.unwrap_err();
-    println!("Failed to resolve path: {}\n{}", to_str, err);
+    info!("Failed to resolve path: {}\n{}", to_str, err);
     return Ok(());
   }
 
@@ -151,20 +152,20 @@ pub fn create_symlink(
   let to_path = to.as_path();
 
   if from_path.exists() || from_path.is_symlink() {
-    println!("Existing directory found");
+    info!("Existing directory found");
     remove_destination(from_path);
   }
 
   let from_parent = from_path.parent().unwrap();
   if !from_parent.exists() {
     if fs::create_dir_all(from_parent).is_err() {
-      println!("Failed to create 'from' directory")
+      info!("Failed to create 'from' directory")
     };
   }
 
   if !to_path.exists() {
     if fs::create_dir_all(to_path).is_err() {
-      println!("Failed to create 'to' directory")
+      info!("Failed to create 'to' directory")
     };
   }
 
@@ -175,13 +176,13 @@ pub fn create_symlink(
       "Failed to create symbolic link: {err}"
     ))));
   } else {
-    println!("Created symbolic link");
+    info!("Created symbolic link");
   }
 
   apply_permissions(to_path.to_str().unwrap(), sec_id);
   apply_permissions(to_path.parent().unwrap().to_str().unwrap(), sec_id);
 
-  println!("Applied ACL permissions");
+  info!("Applied ACL permissions");
   Ok(())
 }
 
@@ -189,7 +190,7 @@ pub fn load_profile(data_dir: PathBuf, game: &GameObject, profile: &ProfileObjec
   let from = &game.destination;
   let to = &profile.path;
   let sec_id = &game.securityID;
-  println!("'{}' -> '{}'", from, to);
+  info!("'{}' -> '{}'", from, to);
   create_symlink(&data_dir, from, to, sec_id)?;
 
   let prof_path = Path::new(to);
@@ -203,14 +204,14 @@ pub fn load_profile(data_dir: PathBuf, game: &GameObject, profile: &ProfileObjec
           let to_str = format!("{}/{}", abs, file_name);
           let file_path = file.path();
           let from_str = file_path.to_str().unwrap();
-          println!("'{}/{}' -> '{}'", substr, file_name, to_str);
+          info!("'{}/{}' -> '{}'", substr, file_name, to_str);
           create_symlink(&data_dir, from_str, &to_str, sec_id)?;
         }
       }
     } else {
       let joined = prof_path.join(rel.clone());
       let joined_str = joined.to_str().unwrap();
-      println!("'{}' -> '{}'", rel, abs);
+      info!("'{}' -> '{}'", rel, abs);
       create_symlink(&data_dir, joined_str, &abs, sec_id)?;
     }
   }

@@ -1,5 +1,6 @@
 use std::{fmt::Debug, fs, path::PathBuf};
 use std::fs::File;
+use log::{debug, info};
 
 use serde::{Deserialize, Serialize};
 use windows::{
@@ -11,7 +12,7 @@ use windows::{
 
 use crate::{consts, Error, Result};
 
-use super::{download_version, read_settings_file, resolve_path_str};
+use super::{download_version, read_settings_file, resolve_path_str, write_settings_file};
 
 type VersionTuple = (String, String, i8);
 
@@ -47,15 +48,15 @@ impl Version {
     }
   }
 
-  pub fn installed(&self, data_dir: PathBuf) -> bool {
-    let path = &self.game_directory(data_dir);
+  pub fn installed(&self, versions_dir: PathBuf) -> bool {
+    let path = &self.game_directory(versions_dir);
     match path {
       Ok(path) => path.exists(),
       Err(_) => false,
     }
   }
 
-  pub fn game_directory(&self, data_dir: PathBuf) -> Result<PathBuf> {
+  pub fn game_directory(&self, versions_dir: PathBuf) -> Result<PathBuf> {
     let dir = match self.version_type {
       0 => {
         format!("Release-{}", self.version)
@@ -65,7 +66,7 @@ impl Version {
       }
       _ => self.dir.clone(),
     };
-    Ok(get_versions_dir(data_dir)?.join(&dir))
+    Ok(versions_dir.join(&dir))
   }
 
   pub fn package_family(&self) -> &str {
@@ -111,6 +112,11 @@ pub fn version_from_dir(path: PathBuf) -> Version {
 }
 
 pub async fn get_all_versions(data_dir: PathBuf) -> Result<Vec<Version>> {
+  debug!("Getting all versions");
+
+  let versions_dir = get_versions_dir(data_dir)?;
+  let version_cache = versions_dir.join("version_cache.json");
+
   let res = reqwest::get("https://mrarm.io/r/w10-vdb").await;
   let mut reversed: Vec<Version> = Vec::new();
   if let Ok(res) = res {
@@ -121,10 +127,14 @@ pub async fn get_all_versions(data_dir: PathBuf) -> Result<Vec<Version>> {
         .filter(|ver| ver.version_type != 1)
         .rev()
         .collect();
+
+      let contents = serde_json::to_string(&reversed).unwrap();
+      let _ = fs::write(version_cache, contents);
+    } else if let Ok(contents) = fs::read_to_string(version_cache) {
+      reversed = serde_json::from_str(&contents)?;
     }
   }
 
-  let versions_dir = get_versions_dir(data_dir)?;
   let base_custom = versions_dir.join("custom");
   if let Ok(custom) = fs::read_dir(base_custom) {
     for entry in custom {
@@ -180,20 +190,20 @@ fn get_package_iter(family: &str) -> Result<IIterable<Package>> {
 }
 
 fn reregister_package(family: &str, game_dir: PathBuf) -> Result<()> {
-  println!("Family: {}", family);
+  info!("Family: {}", family);
   let packages = get_package_iter(family)?;
 
-  println!("Got package iterator");
+  info!("Got package iterator");
 
   for pkg in packages {
     let pkg_dir = pkg.InstalledPath().unwrap_or_default().to_string();
     if pkg_dir == game_dir.to_str().unwrap() {
-      println!("Skipping reregister");
+      info!("Skipping reregister");
       return Ok(());
     }
-    println!("Removing package");
+    info!("Removing package");
     remove_package(&pkg)?;
-    println!("Removed package");
+    info!("Removed package");
   }
 
   let manifest_path = game_dir.join("AppxManifest.xml");
@@ -203,7 +213,7 @@ fn reregister_package(family: &str, game_dir: PathBuf) -> Result<()> {
   let dependencypackageuris = None;
   let deploymentoptions = DeploymentOptions::DevelopmentMode;
 
-  println!("Registering package");
+  info!("Registering package");
   let res = manager()
     .RegisterPackageAsync(manifesturi, dependencypackageuris, deploymentoptions)?
     .get()?;
@@ -214,7 +224,7 @@ fn reregister_package(family: &str, game_dir: PathBuf) -> Result<()> {
       res.ErrorText().unwrap_or_default()
     ))));
   }
-  println!("Registered package");
+  info!("Registered package");
 
   Ok(())
 }
@@ -279,7 +289,7 @@ pub fn extract_version(
   version: Version,
   remove_archive: bool,
 ) -> Result<()> {
-  println!("Extracting version");
+  info!("Extracting version");
   let versions_dir = get_versions_dir(data_dir.clone())?;
   let file_name = format!("Minecraft-{}.appx", version.version);
   let zip_path = versions_dir.join(PathBuf::from(file_name));
@@ -290,16 +300,17 @@ pub fn extract_version(
   if remove_archive {
     fs::remove_file(zip_path)?;
   }
-  println!("Extracted version");
+  info!("Extracted version");
   Ok(())
 }
 
 pub async fn load_version(data_dir: PathBuf, req_path: PathBuf, ver: Version) -> Result<()> {
-  if !ver.installed(data_dir.clone()) {
+  let versions_dir = get_versions_dir(data_dir.clone())?;
+  if !ver.installed(versions_dir.clone()) {
     download_version(data_dir.clone(), req_path, ver.id.clone(), "1".to_owned(), ver.version.clone()).await?;
     extract_version(data_dir.clone(), ver.clone(), true)?;
   }
-  let game_dir = ver.game_directory(data_dir)?;
+  let game_dir = ver.game_directory(versions_dir)?;
   reregister_package(ver.package_family(), game_dir)?;
   Ok(())
 }

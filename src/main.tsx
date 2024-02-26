@@ -9,6 +9,10 @@ import {updateProfiles} from "./store/profiles";
 import {updateGames} from "./store/games";
 import {updateVersions} from "./store/versions";
 import {updateSettings} from "./store/settings.ts";
+import {attachConsole} from "tauri-plugin-log-api";
+import {event} from "@tauri-apps/api";
+
+const detach = await attachConsole();
 
 const games = await ipcInvoke("list_games");
 store.dispatch(updateGames(games));
@@ -27,3 +31,5 @@ render(
   <Provider store={store}><App/></Provider>,
   document.getElementById("root")!
 );
+
+event.listen("tauri://close-requested", detach);

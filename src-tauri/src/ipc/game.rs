@@ -145,17 +145,22 @@ pub async fn list_versions() -> IpcResponse<Vec<VersionInfo>> {
   let data_dir = curr_dir_path();
   match model::get_all_versions(data_dir.clone()).await {
     Ok(vers) => {
-      let infos = vers
-        .into_iter()
-        .map(|v| {
-          VersionInfo::new(
-            v.version_type,
-            v.version.clone(),
-            v.installed(data_dir.clone()),
-          )
-        })
-        .collect();
-      Ok(infos).into()
+      let versions_dir = get_versions_dir(data_dir.clone());
+      if let Ok(versions_dir) = versions_dir {
+        let infos = vers
+          .into_iter()
+          .map(|v| {
+            VersionInfo::new(
+              v.version_type,
+              v.version.clone(),
+              v.installed(versions_dir.clone()),
+            )
+          })
+          .collect();
+        Ok(infos).into()
+      } else {
+        Err(Error::VersionFailure(String::from("Failed to get versions directory"))).into()
+      }
     }
     Err(e) => Err(e).into(),
   }

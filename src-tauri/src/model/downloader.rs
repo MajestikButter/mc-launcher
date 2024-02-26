@@ -5,6 +5,7 @@ use std::{
   path::PathBuf,
 };
 use std::io::Write;
+use log::info;
 use reqwest::Client;
 
 use crate::{Error, Result};
@@ -67,12 +68,12 @@ pub async fn download_version(
   revision: String,
   version_name: String,
 ) -> Result<()> {
-  println!("Downloading version");
+  info!("Downloading version");
   let file_name = format!("Minecraft-{}.appx", version_name);
   let destination = get_versions_dir(data_dir)?.join(PathBuf::from(file_name));
   let client = Client::new();
   let url = download_url(client.clone(), req_path, identity, revision).await?;
   download_file(client, url, destination).await?;
-  println!("Downloaded version");
+  info!("Downloaded version");
   Ok(())
 }

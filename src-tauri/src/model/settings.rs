@@ -37,7 +37,7 @@ pub fn read_settings_file(path: PathBuf) -> SettingsObject {
   let contents = fs::read_to_string(path).unwrap_or(String::new());
   let fallback = SettingsObject {
     keepOpen: true,
-    versionSwitching: false,
+    versionSwitching: true,
     profilesFolder: default_profiles(),
     versionsFolder: default_versions(),
   };
