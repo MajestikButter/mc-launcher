@@ -1,135 +1,209 @@
-use std::{path::PathBuf, process::Command};
+use super::IpcResponse;
+use std::path::PathBuf;
+use regex::Regex;
+use tauri::{api::dialog, command};
 
 use crate::{
-    model::{self, load_profile, GamesRecord},
-    Error,
+  model::{
+    self, get_games, get_profiles, resolve_path_str, GameProfilesInfo,
+    GamesRecord, LimitedGameInfo, ProfileObject, VersionInfo,
+  },
+  Error,
 };
+use crate::utils::curr_dir_path;
+use crate::model::{BareGameObject, extract_package, get_versions_dir, PartialGameObject, PartialProfileObject};
 
-use serde::Serialize;
-use tauri::{command, Manager};
 
-use super::IpcResponse;
-
-fn file_path(app_handle: &tauri::AppHandle) -> PathBuf {
-    let conf = &app_handle.config();
-    tauri::api::path::app_data_dir(conf).unwrap()
+fn file_path() -> PathBuf {
+  curr_dir_path().join("games.json")
 }
 
-fn read_file(app_handle: &tauri::AppHandle) -> GamesRecord {
-    model::read_games_file(file_path(app_handle))
-}
-fn write_file(app_handle: &tauri::AppHandle, record: &GamesRecord) {
-    model::write_games_file(file_path(app_handle), record)
+fn read_file() -> GamesRecord {
+  model::read_games_file(file_path())
 }
 
-#[derive(Serialize)]
-pub struct ProfileInfo {
-    game: String,
-    name: String,
-    icon: String,
-}
-#[derive(Serialize)]
-pub struct GameProfilesInfo {
-    game: String,
-    profiles: Vec<ProfileInfo>,
-    selected: String,
-}
-#[derive(Serialize)]
-pub struct LimitedGameInfo {
-    name: String,
-    icon: String,
-    background: String,
+fn write_file(record: &GamesRecord) {
+  model::write_games_file(file_path(), record)
 }
 
 #[command]
-pub fn play_game(app_handle: tauri::AppHandle, game: String) -> IpcResponse<()> {
-    let file = read_file(&app_handle);
-    let obj = file.get(&game);
+pub async fn play_game(
+  app_handle: tauri::AppHandle,
+  game: String,
+  with_version: bool,
+) -> IpcResponse<()> {
+  let data_dir: PathBuf = curr_dir_path();
+  let file: GamesRecord = read_file();
+  let req_path = app_handle.path_resolver().resolve_resource("./resources/download_request.xml").unwrap();
+  match model::play_game(data_dir, req_path, file, game, with_version).await {
+    Ok(_) => Ok(()).into(),
+    Err(e) => Err(e).into(),
+  }
+}
 
-    let res = match obj {
-        None => Err(Error::GameDoesNotExist(format!(
-            "no game named '{game}' exists"
-        ))),
-        Some(obj) => {
-            let prof = obj.profiles.get(&obj.selectedProfile).unwrap();
-            load_profile(file_path(&app_handle), obj, prof);
-            Command::new("rundll32.exe")
-                .arg("url.dll,FileProtocolHandler")
-                .arg(&obj.launchScript)
-                .output()
-                .expect("Failed to launch game");
-            Ok(())
-        }
-    };
-    IpcResponse::from(res)
+#[command]
+pub fn get_full_profile(
+  game: String,
+  profile: String,
+) -> IpcResponse<ProfileObject> {
+  let file: GamesRecord = read_file();
+  match file.get(&game) {
+    Some(obj) => {
+      let prof = obj.profiles.get(&profile);
+      match prof {
+        Some(prof) => Ok(ProfileObject::from(prof)).into(),
+        None => Err(Error::ProfileFailure("Profile does not exist".to_string())).into(),
+      }
+    }
+    None => Err(Error::GameDoesNotExist("Game does not exist".to_string())).into(),
+  }
 }
 
 #[command]
 pub fn select_profile(
-    app_handle: tauri::AppHandle,
-    game: String,
-    profile: String,
+  game: String,
+  profile: String,
 ) -> IpcResponse<()> {
-    let mut file = read_file(&app_handle);
-    let obj = file.get_mut(&game);
-
-    let res = match obj {
-        None => Err(Error::GameDoesNotExist(format!(
-            "no game named '{game}' exists"
-        ))),
-        Some(obj) => {
-            obj.selectedProfile = profile.to_string();
-            write_file(&app_handle, &file);
-            Ok(())
-        }
-    };
-    IpcResponse::from(res)
-}
-
-#[command]
-pub fn request_profiles_update(
-    app_handle: tauri::AppHandle,
-    name: String,
-) -> IpcResponse<GameProfilesInfo> {
-    let file = read_file(&app_handle);
-    let obj = file.get(&name);
-
-    let res = match obj {
-        None => Err(Error::GameDoesNotExist(format!(
-            "no game named '{name}' exists"
-        ))),
-        Some(obj) => {
-            let mut profs = Vec::new();
-            for (prof_name, prof) in &obj.profiles {
-                profs.push(ProfileInfo {
-                    game: name.clone(),
-                    name: prof_name.to_string(),
-                    icon: prof.iconPath.to_string(),
-                })
-            }
-            let info = GameProfilesInfo {
-                game: name,
-                profiles: profs,
-                selected: obj.selectedProfile.to_string(),
-            };
-            let _ = app_handle.emit_all("mc-launcher://update-profiles", &info);
-            Ok(info)
-        }
-    };
-    IpcResponse::from(res)
-}
-
-#[command]
-pub fn request_games_update(app_handle: tauri::AppHandle) -> IpcResponse<Vec<LimitedGameInfo>> {
-    let res = read_file(&app_handle);
-    let mut vec: Vec<LimitedGameInfo> = Vec::new();
-    for (name, obj) in res {
-        vec.push(LimitedGameInfo {
-            name: name,
-            icon: obj.iconPath,
-            background: obj.backgroundPath,
-        })
+  let mut file: GamesRecord = read_file();
+  match file.get_mut(&game) {
+    Some(obj) => {
+      obj.selectedProfile = profile.to_string();
+      write_file(&file);
+      Ok(()).into()
     }
-    let _ = app_handle.emit_all("mc-launcher://update-games", &vec);
-    IpcResponse::from(Ok(vec))
+    None => Err(Error::GameDoesNotExist("Game does not exist".to_string())).into(),
+  }
+}
+
+#[command]
+pub fn update_profile(
+  game: String,
+  profile: String,
+  data: PartialProfileObject,
+) -> IpcResponse<()> {
+  let mut file: GamesRecord = read_file();
+  match file.get_mut(&game) {
+    Some(obj) => match obj.profiles.get_mut(&profile) {
+      None => return Ok(()).into(),
+      Some(prof) => {
+        if let Some(icon) = data.iconPath { prof.iconPath = icon; }
+        if let Some(path) = data.path { prof.path = path; }
+        if let Some(subfolders) = data.subfolders { prof.subfolders = subfolders; }
+        if let Some(version) = data.version { prof.version = version; }
+        write_file(&file);
+        Ok(()).into()
+      }
+    },
+    None => Err(Error::GameDoesNotExist("Game does not exist".to_string())).into(),
+  }
+}
+
+#[command]
+pub fn list_game_profiles(
+  name: String,
+) -> IpcResponse<GameProfilesInfo> {
+  let file: GamesRecord = read_file();
+  match get_profiles(file, name) {
+    Ok(profs) => Ok(profs).into(),
+    Err(e) => Err(e).into(),
+  }
+}
+
+#[command]
+pub fn get_full_game(
+  game: String,
+) -> IpcResponse<BareGameObject> {
+  let file: GamesRecord = read_file();
+  match file.get(&game) {
+    Some(obj) => Ok(obj.into()).into(),
+    None => Err(Error::GameDoesNotExist("Game does not exist".to_string())).into(),
+  }
+}
+
+#[command]
+pub fn update_game(
+  game: String,
+  data: PartialGameObject,
+) -> IpcResponse<()> {
+  let mut file: GamesRecord = read_file();
+  match file.get_mut(&game) {
+    Some(obj) => {
+      if let Some(icon) = data.iconPath { obj.iconPath = icon }
+      if let Some(path) = data.destination { obj.destination = path; }
+      if let Some(background) = data.backgroundPath { obj.backgroundPath = background; }
+      if let Some(ver) = data.useVersion { obj.useVersion = ver; }
+      if let Some(launch) = data.launchScript { obj.launchScript = launch; }
+      write_file(&file);
+      Ok(()).into()
+    }
+    None => Err(Error::GameDoesNotExist("Game does not exist".to_string())).into(),
+  }
+}
+
+#[command]
+pub async fn list_versions() -> IpcResponse<Vec<VersionInfo>> {
+  let data_dir = curr_dir_path();
+  match model::get_all_versions(data_dir.clone()).await {
+    Ok(vers) => {
+      let versions_dir = get_versions_dir(data_dir.clone());
+      if let Ok(versions_dir) = versions_dir {
+        let infos = vers
+          .into_iter()
+          .map(|v| {
+            VersionInfo::new(
+              v.version_type,
+              v.version.clone(),
+              v.installed(versions_dir.clone()),
+            )
+          })
+          .collect();
+        Ok(infos).into()
+      } else {
+        Err(Error::VersionFailure(String::from("Failed to get versions directory"))).into()
+      }
+    }
+    Err(e) => Err(e).into(),
+  }
+}
+
+#[command]
+pub fn list_games() -> IpcResponse<Vec<LimitedGameInfo>> {
+  let res = read_file();
+  let games = get_games(res);
+  Ok(games).into()
+}
+
+#[command]
+pub fn select_dir(path: String) -> IpcResponse<String> {
+  let data_dir: PathBuf = curr_dir_path();
+  let resolved = resolve_path_str(&data_dir, path.as_str()).unwrap();
+  let folder = dialog::blocking::FileDialogBuilder::new()
+    .set_title("Pick Directory")
+    .set_directory(resolved)
+    .pick_folder();
+  let res = match &folder {
+    Some(path_buf) => path_buf.to_str().unwrap(),
+    None => &path,
+  };
+  Ok(res.to_string()).into()
+}
+
+
+#[command]
+pub fn import_version() -> IpcResponse<()> {
+  let data_dir: PathBuf = curr_dir_path();
+  let folder = dialog::blocking::FileDialogBuilder::new()
+    .set_title("Import Version")
+    .add_filter("*", &["appx"])
+    .pick_file();
+  if let Some(path_buf) = folder {
+    let re = Regex::new(r"[\d.]+").unwrap();
+    let raw_name = path_buf.file_name().unwrap().to_str().unwrap();
+    let name = re.find(raw_name).unwrap().as_str();
+    let dir = format!("custom/{}", name);
+    let versions_dir = get_versions_dir(data_dir).unwrap();
+    let destination = versions_dir.join(dir);
+    let _ = extract_package(path_buf, destination);
+  }
+  Ok(()).into()
 }

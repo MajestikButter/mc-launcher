@@ -1,31 +1,22 @@
 import styled from "styled-components";
-import { useAppDispatch } from "../hooks";
-import { setActive } from "../store/profiles";
-import { ipcInvoke } from "../ipc";
-import store from "../store";
 import { Icon } from "./Icon";
+import { EditButton } from "./EditButton";
 
 interface ProfileElementProperties {
   icon?: string;
   name: string;
-  active: boolean;
+  onClick: () => void;
+  onEdit: () => void;
 }
 export function ProfileElement(props: ProfileElementProperties) {
-  const { icon, active, name } = props;
-  const dispatch = useAppDispatch();
+  const { icon, name, onClick, onEdit } = props;
   return (
     <Button
-      $active={active}
-      onClick={() => {
-        const state = store.getState().games;
-        const game = state.games[state.active]?.name;
-        if (!game) return;
-        dispatch(setActive(name));
-        ipcInvoke("select_profile", { game, profile: name });
-      }}
+      onClick={onClick}
     >
       <ProfileIcon src={icon} />
       <Title>{name}</Title>
+      <EditButton onClick={() => onEdit()} />
     </Button>
   );
 }
@@ -34,7 +25,7 @@ const ProfileIcon = styled(Icon)`
   height: 100%;
 `;
 
-const Button = styled.button<{ $active: boolean }>`
+const Button = styled.button`
   display: flex;
   height: 4vw;
   width: 100%;

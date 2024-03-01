@@ -1,10 +1,12 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import type { RootState } from ".";
+import {createSlice, PayloadAction} from "@reduxjs/toolkit";
+import type {RootState} from ".";
+import {VersionType} from "./versions";
 
 export interface GameInfo {
   name: string;
   icon: string;
   background: string;
+  versionType: VersionType;
 }
 
 interface GamesState {
@@ -36,14 +38,25 @@ const gamesSlice = createSlice({
       state.games = action.payload;
       state.active = findGameIdx(state, prevName);
     },
+    updateGame: (
+      state,
+      action: PayloadAction<
+        { name: string; data: Partial<Omit<GameInfo, "name">> }
+      >,
+    ) => {
+      const pay = action.payload;
+      const idx = state.games.findIndex((v) => v.name === pay.name);
+      if (idx === -1) return;
+      state.games[idx] = {...state.games[idx], ...pay.data};
+    },
   },
 });
 
-export const { setActive, updateGames } = gamesSlice.actions;
+export const {setActive, updateGames, updateGame} = gamesSlice.actions;
 
-export const selectGames = ({ games }: RootState) => games.games;
-export const selectActiveGameIdx = ({ games }: RootState) => games.active;
-export const selectActiveGame = ({ games }: RootState) =>
+export const selectGames = ({games}: RootState) => games.games;
+export const selectActiveGameIdx = ({games}: RootState) => games.active;
+export const selectActiveGame = ({games}: RootState) =>
   games.games[games.active];
 
 export default gamesSlice.reducer;

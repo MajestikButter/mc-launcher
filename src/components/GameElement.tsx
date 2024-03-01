@@ -1,27 +1,28 @@
 import styled from "styled-components";
-import { ipcInvoke } from "../ipc";
-import { useAppDispatch } from "../hooks";
-import { setActive } from "../store/games";
 import { Icon } from "./Icon";
+import { EditButton } from "./EditButton";
 
 interface GameElementProperties {
   icon?: string;
   name: string;
   active: boolean;
+  onClick: () => void;
+  onEdit: () => void;
 }
 export function GameElement(props: GameElementProperties) {
-  const { icon, active, name } = props;
-  const dispatch = useAppDispatch();
+  const { icon, active, name, onClick, onEdit } = props;
+
   return (
-    <Button
-      $active={active}
-      onClick={() => {
-        dispatch(setActive(name));
-        ipcInvoke("request_profiles_update", { name });
-      }}
-    >
+    <Button $active={active} onClick={onClick}>
       <GameIcon src={icon} />
       <Title>{name}</Title>
+      <EditButton
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onEdit();
+        }}
+      />
     </Button>
   );
 }
@@ -33,6 +34,7 @@ const GameIcon = styled(Icon)`
 const Button = styled.button<{ $active: boolean }>`
   display: flex;
   width: 100%;
+  aspect-ratio: 3.33;
   overflow: hidden;
   padding: 0;
   margin-bottom: 3px;
@@ -43,7 +45,7 @@ const Button = styled.button<{ $active: boolean }>`
 `;
 const Title = styled.text`
   display: inline;
-  height: 20%;
+  height: 50%;
   flex-grow: 1;
   font-size: 7mm;
   font-weight: bold;

@@ -4,32 +4,58 @@ pub type Result<T> = core::result::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
-	GameDoesNotExist(String),
+  GameDoesNotExist(String),
+  VersionDoesNotExist(String),
+  ProfileFailure(String),
+  VersionFailure(String),
 
-	JsonSerde(serde_json::Error),
+  JsonSerde(serde_json::Error),
 
-	IO(std::io::Error),
+  Reqwest(reqwest::Error),
+
+  IO(std::io::Error),
+  Zip(zip::result::ZipError),
+
+  WindowsCore(windows::core::HSTRING),
 }
-
 
 // region:    --- Froms
 impl From<serde_json::Error> for Error {
-	fn from(val: serde_json::Error) -> Self {
-		Error::JsonSerde(val)
-	}
+  fn from(val: serde_json::Error) -> Self {
+    Error::JsonSerde(val)
+  }
 }
+
+impl From<reqwest::Error> for Error {
+  fn from(val: reqwest::Error) -> Self {
+    Error::Reqwest(val)
+  }
+}
+
 impl From<std::io::Error> for Error {
-	fn from(val: std::io::Error) -> Self {
-		Error::IO(val)
-	}
+  fn from(val: std::io::Error) -> Self {
+    Error::IO(val)
+  }
+}
+
+impl From<zip::result::ZipError> for Error {
+  fn from(val: zip::result::ZipError) -> Self {
+    Error::Zip(val)
+  }
+}
+
+impl From<windows::core::Error> for Error {
+  fn from(val: windows::core::Error) -> Self {
+    Error::WindowsCore(val.message())
+  }
 }
 // endregion: --- Froms
 
 // region:    --- Error Boiler
 impl std::fmt::Display for Error {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter) -> core::result::Result<(), std::fmt::Error> {
-		write!(fmt, "{self:?}")
-	}
+  fn fmt(&self, fmt: &mut std::fmt::Formatter) -> core::result::Result<(), std::fmt::Error> {
+    write!(fmt, "{self:?}")
+  }
 }
 
 impl std::error::Error for Error {}

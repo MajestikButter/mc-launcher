@@ -1,10 +1,12 @@
 import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from ".";
+import { ListGameProfiles } from "../ipc";
 
 export interface ProfileInfo {
   game: string;
   name: string;
   icon: string;
+  version: string;
 }
 
 interface GamesState {
@@ -17,9 +19,11 @@ const initialState: GamesState = {
   profiles: [],
 };
 
-const findProfIdx = (state: GamesState, name: string) => {
+const findProfIdx = (state: GamesState, game: string, profile: string) => {
   const prev = state.active;
-  const idx = state.profiles.findIndex((v) => v.name === name);
+  const idx = state.profiles.findIndex((v) =>
+    v.name === profile && v.game === game
+  );
   if (idx !== -1) return idx;
   return Math.min(state.profiles.length - 1, Math.max(0, prev));
 };
@@ -29,13 +33,12 @@ const profsSlice = createSlice({
   initialState,
   reducers: {
     setActive: (state, action: PayloadAction<string>) => {
-      state.active = findProfIdx(state, action.payload);
+      const game = state.profiles[state.active]?.game;
+      state.active = findProfIdx(state, game, action.payload);
     },
     updateProfiles: (
       state,
-      action: PayloadAction<
-        { game: string; profiles: ProfileInfo[]; selected: string }
-      >,
+      action: PayloadAction<ListGameProfiles>,
     ) => {
       const profs = [];
       for (const p of state.profiles) {
@@ -44,12 +47,29 @@ const profsSlice = createSlice({
       }
       profs.push(...action.payload.profiles);
       state.profiles = profs;
-      state.active = findProfIdx(state, action.payload.selected);
+      state.active = findProfIdx(
+        state,
+        action.payload.game,
+        action.payload.selected,
+      );
+    },
+    updateProfile: (
+      state,
+      action: PayloadAction<
+        { game: string; name: string; data: Partial<Omit<ProfileInfo, "name">> }
+      >,
+    ) => {
+      const pay = action.payload;
+      const idx = state.profiles.findIndex((v) =>
+        v.game === pay.game && v.name === pay.name
+      );
+      if (idx === -1) return;
+      state.profiles[idx] = { ...state.profiles[idx], ...pay.data };
     },
   },
 });
 
-export const { setActive, updateProfiles } = profsSlice.actions;
+export const { setActive, updateProfiles, updateProfile } = profsSlice.actions;
 
 export const selectProfiles = ({ profiles }: RootState) => profiles.profiles;
 
