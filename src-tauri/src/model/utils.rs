@@ -20,7 +20,7 @@ pub fn resolve_path_str(data_dir: &PathBuf, path: &str) -> Result<PathBuf> {
   }
 
   if replaced.contains("%profiles%") {
-    let profiles = settings.versionsFolder.as_str();
+    let profiles = settings.profilesFolder.as_str();
     if profiles.contains("%profiles%") || profiles.contains("%versions%") {
       return Err(Error::ProfileFailure(String::from("Invalid profiles folder path")));
     }

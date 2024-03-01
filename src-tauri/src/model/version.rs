@@ -12,7 +12,7 @@ use windows::{
 
 use crate::{consts, Error, Result};
 
-use super::{download_version, read_settings_file, resolve_path_str, write_settings_file};
+use super::{download_version, read_settings_file, resolve_path_str};
 
 type VersionTuple = (String, String, i8);
 
@@ -25,29 +25,6 @@ pub struct Version {
 }
 
 impl Version {
-  pub fn latest(version_type: i8) -> Self {
-    match version_type {
-      2 => Self::latest_preview(),
-      _ => Self::latest_release(),
-    }
-  }
-  pub fn latest_release() -> Self {
-    Self {
-      version: String::from("latest"),
-      id: String::from("LATEST_RELEASE"),
-      version_type: 0,
-      dir: String::new(),
-    }
-  }
-  pub fn latest_preview() -> Self {
-    Self {
-      version: String::from("latest"),
-      id: String::from("LATEST_PREVIEW"),
-      version_type: 2,
-      dir: String::new(),
-    }
-  }
-
   pub fn installed(&self, versions_dir: PathBuf) -> bool {
     let path = &self.game_directory(versions_dir);
     match path {
@@ -189,7 +166,7 @@ fn get_package_iter(family: &str) -> Result<IIterable<Package>> {
   Ok(manager().FindPackagesByPackageFamilyName(packagefamilyname)?)
 }
 
-fn reregister_package(family: &str, game_dir: PathBuf) -> Result<()> {
+fn register_package(family: &str, game_dir: PathBuf) -> Result<()> {
   info!("Family: {}", family);
   let packages = get_package_iter(family)?;
 
@@ -198,7 +175,7 @@ fn reregister_package(family: &str, game_dir: PathBuf) -> Result<()> {
   for pkg in packages {
     let pkg_dir = pkg.InstalledPath().unwrap_or_default().to_string();
     if pkg_dir == game_dir.to_str().unwrap() {
-      info!("Skipping reregister");
+      info!("Skipping register");
       return Ok(());
     }
     info!("Removing package");
@@ -228,24 +205,6 @@ fn reregister_package(family: &str, game_dir: PathBuf) -> Result<()> {
 
   Ok(())
 }
-
-fn unregister_package(family: &str, game_dir: String) -> Result<()> {
-  let packages = get_package_iter(family)?;
-  for pkg in packages {
-    match pkg.InstalledPath() {
-      Ok(path) => {
-        if path.to_string() == game_dir {
-          remove_package(&pkg)?;
-        }
-      }
-      Err(_e) => {
-        remove_package(&pkg)?;
-      }
-    }
-  }
-  Ok(())
-}
-
 
 pub fn extract_package(
   zip_path: PathBuf,
@@ -293,7 +252,7 @@ pub fn extract_version(
   let versions_dir = get_versions_dir(data_dir.clone())?;
   let file_name = format!("Minecraft-{}.appx", version.version);
   let zip_path = versions_dir.join(PathBuf::from(file_name));
-  let destination = version.game_directory(data_dir)?;
+  let destination = version.game_directory(versions_dir)?;
 
   extract_package(zip_path.clone(), destination)?;
 
@@ -311,6 +270,7 @@ pub async fn load_version(data_dir: PathBuf, req_path: PathBuf, ver: Version) ->
     extract_version(data_dir.clone(), ver.clone(), true)?;
   }
   let game_dir = ver.game_directory(versions_dir)?;
-  reregister_package(ver.package_family(), game_dir)?;
+
+  register_package(ver.package_family(), game_dir)?;
   Ok(())
 }
