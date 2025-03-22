@@ -14,13 +14,42 @@ use crate::{consts, Error, Result};
 
 use super::{download_version, read_settings_file, resolve_path_str};
 
-type VersionTuple = (String, String, i8);
 
-#[derive(Debug, Serialize)]
+
+struct VersionHashes {
+  #[serde(rename = "MD5")]
+  md5: String,
+  #[serde(rename = "SHA256")]
+  sha256: String,
+}
+struct VersionArch {
+  #[serde(rename = "FileName")]
+  file_name: String,
+  #[serde(rename = "Hashes")]
+  hashes: VersionHashes,
+  #[serde(rename = "UpdateIds")]
+  update_ids: Vec<String>,
+}
+#[derive(Debug, Serialize, Deserialize)]
+struct VersionData {
+  #[serde(rename = "Version")]
+  version: String,
+  #[serde(rename = "Archs")]
+  archs: HashMap<String, VersionArch>,
+}
+
+pub enum VersionType {
+  Release = 0,
+  Beta = 1,
+  Preview = 2,
+  Custom = 3,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Version {
   pub version: String,
   pub id: String,
-  pub version_type: i8,
+  pub version_type: VersionType,
   dir: String,
 }
 
@@ -61,20 +90,6 @@ impl Clone for Version {
   }
 }
 
-impl<'de> Deserialize<'de> for Version {
-  fn deserialize<D>(deserializer: D) -> std::prelude::v1::Result<Self, D::Error>
-    where
-      D: serde::Deserializer<'de>,
-  {
-    Deserialize::deserialize(deserializer).map(|v: VersionTuple| Version {
-      version: v.0,
-      id: v.1,
-      version_type: v.2,
-      dir: String::new(),
-    })
-  }
-}
-
 pub fn get_versions_dir(data_dir: PathBuf) -> Result<PathBuf> {
   resolve_path_str(&data_dir, &read_settings_file(data_dir.join("settings.json")).versionsFolder)
 }
@@ -88,13 +103,13 @@ pub fn version_from_dir(path: PathBuf) -> Version {
   }
 }
 
-pub async fn get_all_versions(data_dir: PathBuf) -> Result<Vec<Version>> {
+pub async fn get_all_versions(data_dir: PathBuf, endpoint: &str) -> Result<Vec<Version>> {
   debug!("Getting all versions");
 
   let versions_dir = get_versions_dir(data_dir)?;
   let version_cache = versions_dir.join("version_cache.json");
 
-  let res = reqwest::get("https://mrarm.io/r/w10-vdb").await;
+  let res = reqwest::get(endpoint).await;
   let mut reversed: Vec<Version> = Vec::new();
   if let Ok(res) = res {
     let json: reqwest::Result<Vec<Version>> = res.json().await;
@@ -128,12 +143,8 @@ pub async fn get_all_versions(data_dir: PathBuf) -> Result<Vec<Version>> {
 }
 
 pub async fn get_versions(data_dir: PathBuf, version_type: i8) -> Result<Vec<Version>> {
-  let versions = get_all_versions(data_dir).await?;
-  let collected = versions
-    .into_iter()
-    .filter(|ver| ver.version_type == version_type)
-    .collect();
-  Ok(collected)
+  let versions = get_all_versions(data_dir, consts::RELEASE_ENDPOINT).await?;
+  Ok(versions)
 }
 
 pub async fn get_version(data_dir: PathBuf, version_id: String) -> Result<Option<Version>> {

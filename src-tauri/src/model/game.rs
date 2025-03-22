@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, fs, path::PathBuf, process::Command};
 
 use crate::{consts, Error, Result};
 
-use super::{get_version, load_profile, load_version, LimitedGameInfo, ProfileObject, latest_version};
+use super::{get_version, load_profile, load_version, LimitedGameInfo, ProfileObject, VersionType, latest_version};
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]
@@ -18,7 +18,7 @@ pub struct GameObject {
   pub securityID: String,
   pub selectedProfile: String,
   #[serde(default)]
-  pub useVersion: i8,
+  pub useVersion: VersionType,
 }
 
 impl GameObject {

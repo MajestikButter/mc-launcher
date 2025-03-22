@@ -10,6 +10,9 @@ pub const PREVIEW_DESTINATION: &str = "%localappdata%/Packages/Microsoft.Minecra
 pub const MINECRAFT: &str = "Microsoft.MinecraftUWP_8wekyb3d8bbwe";
 pub const MINECRAFT_PREVIEW: &str = "Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe";
 
+pub const RELEASE_ENDPOINT: &str = "https://raw.githubusercontent.com/MinecraftBedrockArchiver/Metadata/refs/heads/master/w10_meta.json";
+pub const PREVIEW_ENDPOINT: &str = "https://raw.githubusercontent.com/MinecraftBedrockArchiver/Metadata/refs/heads/master/w10_preview_meta.json";
+
 pub const EXCLUDE_IN_PACKAGE: &[&str] = &[
   "AppxBlockMap.xml",
   "AppxMetadata/CodeIntegrity.cat",
