@@ -12,7 +12,7 @@
   "tauri": {
     "updater": {
       "active": true,
-      "endpoints": ["https://raw.githubusercontent.com/majestikbutter/mc-launcher/master/latest-version.json"],
+      "endpoints": ["https://raw.githubusercontent.com/majestikbutter/mc-launcher/release/latest-version.json"],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNGRUQ0MzkxMDJEMjc4QkEKUldTNmVOSUNrVVB0UDV6WDh0NGlVQkJEZFBBT09lbnRVSnYvaEpOamNyTlFlOE5SWlpKYjRBQkoK"
     },
     "cli": {
@@ -52,7 +52,7 @@
     },
     "bundle": {
       "active": true,
-      "targets": "msi",
+      "targets": ["msi", "nsis", "updater"],
       "identifier": "com.majestik.mc-launcher",
       "icon": [
         "icons/32x32.png",

@@ -88,13 +88,13 @@ pub fn version_from_dir(path: PathBuf) -> Version {
   }
 }
 
-pub async fn get_all_versions(data_dir: PathBuf) -> Result<Vec<Version>> {
+pub async fn get_all_versions(data_dir: PathBuf, version_list_endpoint: &str) -> Result<Vec<Version>> {
   debug!("Getting all versions");
 
   let versions_dir = get_versions_dir(data_dir)?;
   let version_cache = versions_dir.join("version_cache.json");
 
-  let res = reqwest::get("https://mrarm.io/r/w10-vdb").await;
+  let res = reqwest::get(version_list_endpoint).await;
   let mut reversed: Vec<Version> = Vec::new();
   if let Ok(res) = res {
     let json: reqwest::Result<Vec<Version>> = res.json().await;
@@ -127,8 +127,8 @@ pub async fn get_all_versions(data_dir: PathBuf) -> Result<Vec<Version>> {
   Ok(reversed)
 }
 
-pub async fn get_versions(data_dir: PathBuf, version_type: i8) -> Result<Vec<Version>> {
-  let versions = get_all_versions(data_dir).await?;
+pub async fn get_versions(data_dir: PathBuf, version_type: i8, version_list_endpoint: &str) -> Result<Vec<Version>> {
+  let versions = get_all_versions(data_dir, version_list_endpoint).await?;
   let collected = versions
     .into_iter()
     .filter(|ver| ver.version_type == version_type)
@@ -136,8 +136,8 @@ pub async fn get_versions(data_dir: PathBuf, version_type: i8) -> Result<Vec<Ver
   Ok(collected)
 }
 
-pub async fn get_version(data_dir: PathBuf, version_id: String) -> Result<Option<Version>> {
-  let versions = get_all_versions(data_dir).await?;
+pub async fn get_version(data_dir: PathBuf, version_id: String, version_list_endpoint: &str) -> Result<Option<Version>> {
+  let versions = get_all_versions(data_dir, version_list_endpoint).await?;
   let version = versions.into_iter().find(|v| v.version == version_id);
   Ok(version)
 }
@@ -145,8 +145,9 @@ pub async fn get_version(data_dir: PathBuf, version_id: String) -> Result<Option
 pub async fn latest_version(
   data_dir: PathBuf,
   use_version: i8,
+  version_list_endpoint: &str,
 ) -> Result<Version> {
-  let versions = get_versions(data_dir, use_version).await?;
+  let versions = get_versions(data_dir, use_version, version_list_endpoint).await?;
   let latest = (*versions.first().unwrap()).clone();
   Ok(latest)
 }

@@ -44,6 +44,13 @@ export function SettingsButton() {
             dispatch(updateSettings({versionsFolder: newPath}))
           }}
           />
+          <br/>
+          Version List Endpoint:
+          <input
+            type="text"
+            value={settings.versionListEndpoint}
+            onChange={(e) => dispatch(updateSettings({versionListEndpoint: (e.target! as HTMLInputElement).value}))}
+          />
         </EditDialog>
       )}
     </Button>

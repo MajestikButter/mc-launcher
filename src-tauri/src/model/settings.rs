@@ -15,6 +15,8 @@ pub struct SettingsObject {
   pub profilesFolder: String,
   #[serde(default = "default_versions")]
   pub versionsFolder: String,
+  #[serde(default = "default_version_list_endpoint")]
+  pub versionListEndpoint: String,
 }
 
 fn default_profiles() -> String {
@@ -23,6 +25,10 @@ fn default_profiles() -> String {
 
 fn default_versions() -> String {
   "%install%/versions".to_string()
+}
+
+fn default_version_list_endpoint() -> String {
+  "https://raw.githubusercontent.com/ddf8196/mc-w10-versiondb-auto-update/refs/heads/master/versions.json.min".to_string()
 }
 
 fn parse_settings(str: &str) -> Result<SettingsObject> {
@@ -40,6 +46,7 @@ pub fn read_settings_file(path: PathBuf) -> SettingsObject {
     versionSwitching: true,
     profilesFolder: default_profiles(),
     versionsFolder: default_versions(),
+    versionListEndpoint: default_version_list_endpoint(),
   };
   parse_settings(&contents).unwrap_or(fallback)
 }
