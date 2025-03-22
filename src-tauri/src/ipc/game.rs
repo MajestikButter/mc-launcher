@@ -5,8 +5,7 @@ use tauri::{api::dialog, command};
 
 use crate::{
   model::{
-    self, get_games, get_profiles, resolve_path_str, GameProfilesInfo,
-    GamesRecord, LimitedGameInfo, ProfileObject, VersionInfo,
+    self, get_games, get_profiles, read_settings_file, resolve_path_str, GameProfilesInfo, GamesRecord, LimitedGameInfo, ProfileObject, VersionInfo
   },
   Error,
 };
@@ -143,7 +142,8 @@ pub fn update_game(
 #[command]
 pub async fn list_versions() -> IpcResponse<Vec<VersionInfo>> {
   let data_dir = curr_dir_path();
-  match model::get_all_versions(data_dir.clone()).await {
+  let version_endpoint = read_settings_file(data_dir.join("settings.json")).versionListEndpoint;
+  match model::get_all_versions(data_dir.clone(), &version_endpoint).await {
     Ok(vers) => {
       let versions_dir = get_versions_dir(data_dir.clone());
       if let Ok(versions_dir) = versions_dir {
@@ -197,10 +197,11 @@ pub fn import_version() -> IpcResponse<()> {
     .add_filter("*", &["appx"])
     .pick_file();
   if let Some(path_buf) = folder {
-    let re = Regex::new(r"[\d.]+").unwrap();
+    let re = Regex::new(r"[\d]\.[\d.]+").unwrap();
     let raw_name = path_buf.file_name().unwrap().to_str().unwrap();
     let name = re.find(raw_name).unwrap().as_str();
-    let dir = format!("custom/{}", name);
+    println!("{raw_name} {name}");
+    let dir = format!("custom/import_{}", name);
     let versions_dir = get_versions_dir(data_dir).unwrap();
     let destination = versions_dir.join(dir);
     let _ = extract_package(path_buf, destination);

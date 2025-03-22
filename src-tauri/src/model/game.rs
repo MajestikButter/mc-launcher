@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, fs, path::PathBuf, process::Command};
 
 use crate::{consts, Error, Result};
 
-use super::{get_version, load_profile, load_version, LimitedGameInfo, ProfileObject, latest_version};
+use super::{get_version, latest_version, load_profile, load_version, read_settings_file, LimitedGameInfo, ProfileObject};
 
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize)]
@@ -133,16 +133,18 @@ pub async fn play_game(
   with_version: bool,
 ) -> Result<()> {
   let game = get_game(&record, game)?;
+  let settings = read_settings_file(data_dir.join("settings.json"));
+  let version_endpoint = settings.versionListEndpoint;
   let prof = game.profiles.get(&game.selectedProfile);
   if prof.is_some() {
     let prof = prof.unwrap();
 
     if with_version && (game.useVersion == 0 || game.useVersion == 2 || game.useVersion == 3) {
       if prof.version == "latest" && game.useVersion != 3 {
-        let latest_ver = latest_version(data_dir.clone(), game.useVersion).await?;
+        let latest_ver = latest_version(data_dir.clone(), game.useVersion, &version_endpoint).await?;
         load_version(data_dir.clone(), req_path.clone(), latest_ver).await?;
       } else {
-        let version = get_version(data_dir.clone(), prof.version.clone()).await?;
+        let version = get_version(data_dir.clone(), prof.version.clone(), &version_endpoint).await?;
         match version {
           Some(version) => {
             load_version(data_dir.clone(), req_path.clone(), version).await?;

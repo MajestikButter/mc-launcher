@@ -29,6 +29,7 @@ export interface Settings {
   versionSwitching: boolean;
   profilesFolder: string;
   versionsFolder: string;
+  versionListEndpoint: string;
 }
 
 interface InvokeRouter {
